@@ -988,6 +988,9 @@ $("dictWarn").textContent="45초 동안 받아쓴 말이 없습니다. 마이크
 // 기본: 기기 마이크로 10초씩 녹음 → wav로 PC에 보냄 → 받아쓴 글이 돌아옴(알림음 없음)
 const startKbd = startLive;
 let mic=null;
+// 받아쓰기 모델이 조용한 곳에서 지어내는 유튜브 끝인사류는 버린다(그 문장만 있을 때)
+const GHOST=/^(시청(해|하여)?\s*주셔서\s*감사합니다|구독과\s*좋아요.*|좋아요와\s*구독.*|다음\s*영상에서\s*(만나요|뵙겠습니다)|자막\s*(제공|by).*|MBC\s*뉴스.*|정맹|오늘\s*영상은\s*여기까지.*)[.!\s]*$/;
+function ghostCut(t){ return t.split(/(?<=[.!?])\s+|\n/).filter(x=>!GHOST.test(x.trim())).join(" ").trim(); }
 function wavOf(f32, rate){
   const b=new ArrayBuffer(44+f32.length*2), v=new DataView(b); const w=(o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
   w(0,"RIFF"); v.setUint32(4,36+f32.length*2,true); w(8,"WAVE"); w(12,"fmt "); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
@@ -1015,7 +1018,7 @@ startLive = async function(){
     if(Math.sqrt(ss/(all.length/8)) < 0.004) return; // 조용한 10초는 보내지 않는다
     const wav=wavOf(all, ctx.sampleRate);
     queue = queue.then(async()=>{
-      try{ const j=await pcFetch("/stt", wav, "audio/wav"); state.lastInput=Date.now(); if(j.text) addHeard(j.text, at); }
+      try{ const j=await pcFetch("/stt", wav, "audio/wav"); state.lastInput=Date.now(); const t=ghostCut(j.text||""); if(t) addHeard(t, at); }
       catch(err){ log(`받아쓰기 실패: ${err.message||err.code}`,"no"); }
     });
   };
