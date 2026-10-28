@@ -177,11 +177,6 @@ textarea{width:100%;min-height:110px;font-size:14px;font-family:var(--f-mono)}
 .ok{color:var(--accent)} .no{color:var(--bad)} .wa{color:var(--warn)}
 
 body{margin:0}
-#keyBtn{margin-left:auto}
-#keyBox{position:fixed;inset:0;z-index:50;background:rgba(20,22,20,.55);display:flex;align-items:center;justify-content:center;padding:16px}
-#keyBox .kb{background:var(--panel);border-radius:16px;padding:18px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:10px}
-#keyBox p{margin:0;font-size:13px;color:var(--sub)}
-#keyBox input{font:inherit;font-size:16px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
 </style>
 </head>
 <body>
@@ -189,9 +184,8 @@ body{margin:0}
 
 <div class="top">
   <h1>GIST 실시간 시험판</h1>
-  <p style="flex-basis:100%;margin:0;padding:10px 12px;border:1px solid var(--accent);border-radius:10px;color:var(--ink)">회의에서 마이크로 바로 쓰려면 웹앱을 크롬 · 삼성 인터넷 · 사파리에서 여세요: <a href="https://kuroru.github.io/gist-live/" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">kuroru.github.io/gist-live</a>. 이 페이지(Claude 앱 안)는 마이크를 쓸 수 없어 키보드 음성 입력만 됩니다.</p>
   <p>회의를 들으며 1분마다 요약하고, 찾아볼 말을 라벨로 띄웁니다. 끝내면 회의록과 자료를 한 파일로 줍니다.</p>
-  <button id="keyBtn" type="button">API 키</button>
+  <p id="pcNote" hidden style="flex-basis:100%;margin:0;padding:10px 12px;border:1px solid var(--bad);border-radius:10px;color:var(--ink)">PC와 연결되지 않았습니다. PC에서 'GIST_PC받아쓰기_켜기'를 실행하고, 나오는 연결 링크로 이 화면을 여세요.</p>
 </div>
 
 <div class="wrap">
@@ -220,7 +214,8 @@ body{margin:0}
     <h2>회의 글</h2>
     <div class="row">
       <select id="src" aria-label="회의 글 고르기">
-        <option value="live" selected>실시간: 마이크</option>
+        <option value="live" selected>실시간: PC 받아쓰기(기본)</option>
+        <option value="web">실시간 예비: 웹브라우저 음성 인식(안드로이드는 알림음 남)</option>
         <option value="kbd">실시간 예비: 키보드 음성 입력</option>
         <option value="sample">예시 대본(지어낸 회의, 약 4분)</option>
         <option value="paste">붙여 넣은 글</option>
@@ -246,59 +241,45 @@ body{margin:0}
       <div><b id="sLat">-</b><span>답 평균 초</span></div>
     </div>
 
-    <h2>API 키</h2>
-    <div class="row"><button id="keyBtn2" type="button">키 바꾸기 · 지우기</button></div>
+    <h2>PC 연결</h2>
+    <div class="row"><button id="pcCheck" type="button">PC 연결 확인</button><span id="pcOut" class="note" style="margin:0"></span></div>
 
     <h2>마이크 확인</h2>
     <div class="row"><button id="mic">마이크 요청해 보기</button><span id="micOut" class="note" style="margin:0"></span></div>
 
     <h2>기록</h2>
     <div class="log" id="log"></div>
-    <p class="note">요약 · 제안 · 짧은 답은 빠른 모델, 자료 PDF는 기본 모델입니다. 웹 검색은 Claude API 검색 기능으로 하고, 출처는 실제 검색 결과에서만 붙입니다. 라벨 · 밑줄 말을 누르거나 직접 물어보면 자료가 저절로 쌓이고, '끝내기'를 누르면 표지와 함께 한 파일로 모아 보여 주고, 위쪽 라벨 줄을 누르면 그 자료로 바로 갑니다. 'HTML 받기'는 노아스킨 HTML 한 장(위에 따라다니는 라벨 줄 포함)을, 'PDF 변환'은 누를 때 PDF를 만들어 받습니다. 회의 중에 누른 말은 전사 아래 띠에 모여, 다시 누르면 그 요약이 열립니다. 아래 칸에 직접 물어보면 검색해서 답합니다. 검색은 세이프서치 엄격으로 합니다. 라벨은 회의 시각 1분이 지나면 흐려지기 시작해 2분 반이면 거의 사라지고, 주제가 바뀌면 앞 라벨이 먼저 흐려집니다. 라벨 칸을 위로 올리면 지난 라벨이 다시 또렷해집니다. 요약 카드 안에 나온 말은 카드 안에서 바로 누를 수 있고(점선 밑줄), 요약에 없는 말과, 대화에 나오지 않았지만 판단에 중요한 연관 정보(점선 '연관' 라벨)가 옆에 라벨로 뜹니다. 라벨이나 밑줄 말을 누르면 미리 만든 한두 문장 요약이 바로 뜨고, 그사이 GIST가 웹을 찾아 출처 붙은 요약으로 바꾼 뒤 같은 결과로 자료를 만들어 '회의 자료'에 담습니다. 'more'는 네이버 검색을 새 창으로 엽니다. 요약 카드는 중요도에 따라 '중요' · '핵심' 표시만 붙습니다. '끝내기'를 누르면 GIST가 최종 회의록(논의 흐름 · 결정 · 할 일 · 미결 · 찾아본 자료)을 쓰고, 표지 → 회의록 → 자료 순으로 한 파일에 모아 보여 줍니다. 자료 화면에서 회의록 · 자료를 누르면 바로 고칠 수 있고, 글을 끌어 고르면 '모두 바꾸기' 막대가 떠서 같은 말을 한꺼번에 바꿉니다(요약 카드 · 받아쓰기 · 자료 전부, 앞으로 오는 요약에도 적용). 받은 HTML 파일에서도 같은 방식으로 고치고 '고친 파일 저장'으로 다시 저장합니다. '화자 구분'을 켜면 회의록에 화자 A · B…와 짐작한 역할이 붙습니다(목소리가 아니라 말 · 맥락으로 나눔). 회의 중에는 '회의 시작' 단추가 '끝내기'로 바뀝니다.</p>
+    <p class="note">요약 · 제안 · 짧은 답은 빠른 모델, 자료 PDF는 기본 모델입니다. 웹 검색은 Claude 검색 기능으로 하고, 출처는 실제 검색 결과에서만 붙입니다. 소리 받아쓰기와 Claude 호출은 마스터 PC(GIST PC 받아쓰기)를 거칩니다. 라벨 · 밑줄 말을 누르거나 직접 물어보면 자료가 저절로 쌓이고, '끝내기'를 누르면 표지와 함께 한 파일로 모아 보여 주고, 위쪽 라벨 줄을 누르면 그 자료로 바로 갑니다. 'HTML 받기'는 노아스킨 HTML 한 장(위에 따라다니는 라벨 줄 포함)을, 'PDF 변환'은 누를 때 PDF를 만들어 받습니다. 회의 중에 누른 말은 전사 아래 띠에 모여, 다시 누르면 그 요약이 열립니다. 아래 칸에 직접 물어보면 검색해서 답합니다. 검색은 세이프서치 엄격으로 합니다. 라벨은 회의 시각 1분이 지나면 흐려지기 시작해 2분 반이면 거의 사라지고, 주제가 바뀌면 앞 라벨이 먼저 흐려집니다. 라벨 칸을 위로 올리면 지난 라벨이 다시 또렷해집니다. 요약 카드 안에 나온 말은 카드 안에서 바로 누를 수 있고(점선 밑줄), 요약에 없는 말과, 대화에 나오지 않았지만 판단에 중요한 연관 정보(점선 '연관' 라벨)가 옆에 라벨로 뜹니다. 라벨이나 밑줄 말을 누르면 미리 만든 한두 문장 요약이 바로 뜨고, 그사이 GIST가 웹을 찾아 출처 붙은 요약으로 바꾼 뒤 같은 결과로 자료를 만들어 '회의 자료'에 담습니다. 'more'는 네이버 검색을 새 창으로 엽니다. 요약 카드는 중요도에 따라 '중요' · '핵심' 표시만 붙습니다. '끝내기'를 누르면 GIST가 최종 회의록(논의 흐름 · 결정 · 할 일 · 미결 · 찾아본 자료)을 쓰고, 표지 → 회의록 → 자료 순으로 한 파일에 모아 보여 줍니다. 자료 화면에서 회의록 · 자료를 누르면 바로 고칠 수 있고, 글을 끌어 고르면 '모두 바꾸기' 막대가 떠서 같은 말을 한꺼번에 바꿉니다(요약 카드 · 받아쓰기 · 자료 전부, 앞으로 오는 요약에도 적용). 받은 HTML 파일에서도 같은 방식으로 고치고 '고친 파일 저장'으로 다시 저장합니다. '화자 구분'을 켜면 회의록에 화자 A · B…와 짐작한 역할이 붙습니다(목소리가 아니라 말 · 맥락으로 나눔). 회의 중에는 '회의 시작' 단추가 '끝내기'로 바뀝니다.</p>
   </details>
 </div>
 
 <div id="sheet" hidden role="dialog" aria-label="라벨 요약"><div class="shHead"><b id="shTitle"></b><button id="shClose" aria-label="닫기">닫기</button></div><div id="shBody"></div></div>
-<div id="keyBox" hidden role="dialog" aria-label="API 키"><div class="kb">
-  <b>Claude API 키</b>
-  <p>console.anthropic.com에서 만든 키를 붙여 넣으세요. 이 기기의 웹브라우저에만 저장되고 다른 곳으로 보내지 않습니다(Claude API로만 갑니다).</p>
-  <input id="keyIn" type="password" autocomplete="off" placeholder="sk-ant-..." aria-label="API 키">
-  <div class="row"><button id="keySave" class="main">저장</button><button id="keyDel">지우기</button><button id="keyX">닫기</button></div>
-</div></div>
 <div id="doc" class="ndoc" aria-hidden="true"></div>
 <div id="viewer" hidden><div class="vbar"><span id="vtitle"></span><button id="vhtml">HTML 받기</button><button id="vsave">PDF 변환</button><button id="vclose">닫기</button></div><div class="vbody" id="vbody"></div></div>
 <script>
-// GIST 웹앱 어댑터: 아티팩트의 claude.use("sample" · "downloads") 자리를 Claude API · 일반 내려받기로 바꾼다
-const GIST_MODEL = "claude-opus-5-5";
-let _Anthropic = null;
-function openKey(){ document.getElementById("keyBox").hidden=false; document.getElementById("keyIn").focus(); }
-async function apiClient(){
-  let key=""; try{ key=localStorage.getItem("gist_key")||""; }catch(_){}
-  if(!key){ openKey(); throw {code:"auth_error", message:"API 키가 없습니다"}; }
-  if(!_Anthropic){ const m = await import("https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.39.0/+esm"); _Anthropic = m.default || m.Anthropic; }
-  return new _Anthropic({ apiKey:key, dangerouslyAllowBrowser:true });
+// GIST 웹앱 어댑터: 아티팩트의 claude.use("sample" · "downloads") 자리를 마스터 PC 중계 · 일반 내려받기로 바꾼다
+(function(){ // 연결 링크(?pc=…&t=…)로 열면 이 기기에 기억하고 주소창에서 지운다
+  const q=new URLSearchParams(location.search);
+  if(q.get("pc") && q.get("t")){ try{ localStorage.setItem("gist_pc", q.get("pc")); localStorage.setItem("gist_tok", q.get("t")); }catch(_){} history.replaceState(null, "", location.pathname); }
+  try{ localStorage.removeItem("gist_key"); }catch(_){} // 예전 판에서 넣은 API 키는 이 기기에서 지운다(이제 PC에만 둠)
+})();
+function pcConf(){ try{ return {pc:localStorage.getItem("gist_pc")||"", tok:localStorage.getItem("gist_tok")||""}; }catch(_){ return {pc:"", tok:""}; } }
+async function pcFetch(path, body, type="application/json"){
+  const {pc, tok}=pcConf();
+  if(!pc){ document.getElementById("pcNote").hidden=false; throw {code:"pc_missing", message:"PC 연결 링크로 열어 주세요"}; }
+  let r;
+  try{ r = await fetch(pc+path, {method:"POST", headers:{"content-type":type, "x-gist-token":tok}, body}); }
+  catch(e){ document.getElementById("pcNote").hidden=false; throw {code:"pc_unreachable", message:"PC에 닿지 않습니다(PC가 꺼졌거나 링크가 바뀜)"}; }
+  const j = await r.json().catch(()=>({error:"응답을 읽지 못함"}));
+  if(r.status===403){ document.getElementById("pcNote").hidden=false; throw {code:"pc_token", message:"연결 링크가 바뀌었습니다. PC에 나온 새 링크로 여세요"}; }
+  if(!r.ok || j.error) throw {code: String(j.error||"upstream_error").split(" ")[0], message:String(j.error||r.status)};
+  document.getElementById("pcNote").hidden=true;
+  return j;
 }
-async function askClaude(prompt, {effort="low", tools, onText}={}){
-  const c = await apiClient();
-  let messages=[{role:"user", content:prompt}], blocks=[];
-  try{
-    for(let i=0;i<4;i++){
-      const r = await c.beta.messages.create({ model:GIST_MODEL, max_tokens:16000, messages, ...(tools?{tools}:{}),
-        output_config:{effort}, betas:["server-side-fallback-2026-07-01"], fallbacks:"default" });
-      if(r.stop_reason==="refusal") throw {code:"refused", message:"Claude가 답하지 않았습니다"};
-      blocks.push(...r.content);
-      if(r.stop_reason==="pause_turn"){ messages=[...messages, {role:"assistant", content:r.content}]; continue; }
-      break;
-    }
-  }catch(e){
-    if(e && e.code) throw e;
-    const st=e?.status;
-    if(st===401 || st===403){ openKey(); throw {code:"auth_error", message:"API 키를 확인해 주세요"}; }
-    throw {code: st===429 ? "rate_limited" : "upstream_error", message:String(e?.message||e)};
-  }
-  const text = blocks.filter(b=>b.type==="text").map(b=>b.text).join("");
-  if(onText && text) onText({text, delta:text});
-  return {text, blocks};
+async function askClaude(prompt, {effort="low", search=false, onText}={}){
+  const j = await pcFetch("/claude", JSON.stringify({prompt, effort, web_search:search}));
+  if(onText && j.text) onText({text:j.text, delta:j.text});
+  return j;
 }
 function parseJsonLoose(t){
   try{ return JSON.parse(t); }catch(_){}
@@ -383,6 +364,7 @@ $("go").onclick = () => state.running ? stop("마침") : start();
 async function start(){
   const v=$("src").value; let txt;
   if(v==="live"){ return startLive(); }
+  if(v==="web"){ return startWebSpeech(); }
   if(v==="kbd"){ return startKbd(); }
   if(v==="sample") txt=SAMPLE;
   else if(v==="paste") txt=$("paste").value;
@@ -966,67 +948,106 @@ $("mic").onclick = async () => {
 };
 </script>
 <script>
-// 웹 검색: Claude API 웹 검색 도구. 결과 목록(제목 · 주소 · 날짜)과 Claude가 정리한 내용을 함께 돌려준다
+// 웹 검색: PC가 Claude 검색 기능으로 찾는다. 결과 목록(제목 · 주소 · 날짜)과 정리한 내용을 함께 돌려준다
 webSearch = async (query) => {
   try{
-    const r = await askClaude(`웹에서 '${query}'를 찾아 판단에 쓸 사실을 정리한다. 광고 · 성인 · 도박 · 대출 홍보 결과는 무시한다. 결과마다 한 줄: 제목 | 주소 | 날짜 | 핵심 내용(숫자 · 기준 위주). 한국어.`,
-      {effort:"low", tools:[{type:"web_search_20260209", name:"web_search", max_uses:3}]});
-    const found = r.blocks.filter(b=>b.type==="web_search_tool_result" && Array.isArray(b.content)).flatMap(b=>b.content)
-      .map(x=>`${x.title||""} | ${x.url||""} | ${x.page_age||""}`).join("\n");
+    const r = await askClaude(`웹에서 '${query}'를 찾아 판단에 쓸 사실을 정리한다. 광고 · 성인 · 도박 · 대출 홍보 결과는 무시한다. 결과마다 한 줄: 제목 | 주소 | 날짜 | 핵심 내용(숫자 · 기준 위주). 한국어.`, {effort:"low", search:true});
+    const found = (r.results||[]).map(x=>`${x.title||""} | ${x.url||""} | ${x.page_age||""}`).join("\n");
     log(`검색: ${query}`, "ok");
     return (found ? "검색 결과 목록:\n"+found+"\n\n" : "") + "정리:\n" + r.text;
-  }catch(e){ log(`검색 안 됨(${e.code||e.message}). 검색 없이 답합니다`, "wa"); return null; }
+  }catch(e){ log(`검색 안 됨(${e.message||e.code}). 검색 없이 답합니다`, "wa"); return null; }
 };
 
-// 실시간: 웹브라우저 마이크 음성 인식(ko-KR). 끊기면 저절로 다시 켠다. 화면이 꺼지지 않게 잡아 둔다
-const startKbd = startLive;
-let recog = null, wake = null;
+// 공통: 화면 꺼짐 막기, 들은 줄 넣기
+let wake=null;
 async function keepAwake(){ try{ wake = await navigator.wakeLock.request("screen"); }catch(_){} }
 function releaseAwake(){ try{ wake && wake.release(); }catch(_){} wake=null; }
 document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && state.running) keepAwake(); });
-function addHeard(t){
-  const L={t:(Date.now()-state.t0)/1000, s:t};
+function addHeard(t, at){
+  const L={t: at ?? (Date.now()-state.t0)/1000, s:t};
   for(const a in state.fixes) if(L.s.includes(a)){ L.raw ??= L.s; L.s=L.s.split(a).join(state.fixes[a]); }
-  state.lines.push(L); state.i=state.lines.length;
+  state.lines.push(L); state.lines.sort((a,b)=>a.t-b.t); state.i=state.lines.length;
   state.live=[...(state.live||[]).slice(-1), L.s]; $("live").textContent=state.live.join("\n");
 }
-startLive = function(){
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){ log("이 웹브라우저는 음성 인식을 지원하지 않습니다. 키보드 음성 입력으로 바꿉니다", "wa"); return startKbd(); }
-  resetAll(); state.lines=[]; state.liveMode=true; state.micMode=true; state.t0=Date.now(); state.lastInput=Date.now();
+function beginRun(label){
+  resetAll(); state.lines=[]; state.liveMode=true; state.t0=Date.now(); state.lastInput=Date.now();
   $("dict").hidden=true; $("live").textContent="듣고 있습니다…";
   state.running=true; $("rec").classList.add("on"); $("go").textContent="끝내기"; $("go").classList.add("end");
-  recog = new SR(); recog.lang="ko-KR"; recog.continuous=true; recog.interimResults=true;
-  recog.onresult = e => {
-    state.lastInput=Date.now(); $("dictWarn").hidden=true; let interim="";
-    for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i], t=r[0].transcript.trim(); if(!t) continue; if(r.isFinal) addHeard(t); else interim+=t+" "; }
-    if(interim) $("live").textContent=[...(state.live||[]).slice(-1), interim.trim()].join("\n");
-  };
-  recog.onerror = e => {
-    if(e.error==="not-allowed" || e.error==="service-not-allowed"){ state.micMode=false; $("dictWarn").textContent="마이크가 허용되지 않았습니다. 주소창 옆 자물쇠에서 마이크를 허용해 주세요"; $("dictWarn").hidden=false; log("마이크 허용 안 됨","no"); }
-    else if(e.error!=="no-speech" && e.error!=="aborted") log(`음성 인식 오류: ${e.error}`, "wa");
-  };
-  recog.onend = () => { if(state.running && state.micMode) setTimeout(()=>{ try{ recog.start(); }catch(_){} }, 300); };
-  try{ recog.start(); }catch(e){ log(`음성 인식 시작 실패: ${e.message}`,"no"); }
-  keepAwake(); log("실시간 시작(마이크)");
+  keepAwake(); log(`실시간 시작(${label})`);
   state.timer = setInterval(()=>{
     state.t=(Date.now()-state.t0)/1000; $("clock").textContent=fmt(state.t);
-    if(state.micMode && Date.now()-state.lastInput>45000){ $("dictWarn").textContent="45초 동안 들린 말이 없습니다. 마이크가 막혔는지 확인해 주세요"; $("dictWarn").hidden=false; }
+    $("dictWarn").hidden = !(state.micOn && Date.now()-state.lastInput>45000);
     if(!state.busy && state.t-state.lastCut>=60) cut(false);
     fadeLabels();
   }, 500);
-};
-const _stopApp = stop;
-stop = function(why){ if(state.micMode){ state.micMode=false; try{ recog && recog.stop(); }catch(_){} } releaseAwake(); _stopApp(why); };
+}
+$("dictWarn").textContent="45초 동안 받아쓴 말이 없습니다. 마이크와 PC 연결을 확인해 주세요";
 
-// API 키: 이 기기의 웹브라우저에만 저장한다
-function syncKeyBtn(){ let has=false; try{ has=!!localStorage.getItem("gist_key"); }catch(_){} $("keyBtn").hidden=has; }
-$("keyBtn").onclick = openKey; $("keyBtn2").onclick = openKey;
-$("keySave").onclick = () => { const v=$("keyIn").value.trim(); if(!v) return; try{ localStorage.setItem("gist_key", v); }catch(_){} $("keyIn").value=""; $("keyBox").hidden=true; syncKeyBtn(); log("API 키 저장(이 기기에만)","ok"); };
-$("keyDel").onclick = () => { try{ localStorage.removeItem("gist_key"); }catch(_){} syncKeyBtn(); log("API 키 지움","ok"); };
-$("keyX").onclick = () => { $("keyBox").hidden=true; };
-try{ if(!localStorage.getItem("gist_key")) openKey(); }catch(_){}
-syncKeyBtn();
+// 기본: 기기 마이크로 10초씩 녹음 → wav로 PC에 보냄 → 받아쓴 글이 돌아옴(알림음 없음)
+const startKbd = startLive;
+let mic=null;
+function wavOf(f32, rate){
+  const b=new ArrayBuffer(44+f32.length*2), v=new DataView(b); const w=(o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+  w(0,"RIFF"); v.setUint32(4,36+f32.length*2,true); w(8,"WAVE"); w(12,"fmt "); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,rate,true); v.setUint32(28,rate*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,"data"); v.setUint32(40,f32.length*2,true);
+  for(let i=0;i<f32.length;i++){ const x=Math.max(-1,Math.min(1,f32[i])); v.setInt16(44+i*2, x<0?x*0x8000:x*0x7fff, true); }
+  return new Blob([b], {type:"audio/wav"});
+}
+startLive = async function(){
+  const {pc}=pcConf(); if(!pc){ $("pcNote").hidden=false; log("PC 연결 링크로 열어 주세요","no"); return; }
+  let stream;
+  try{ stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}}); }
+  catch(e){ $("dictWarn").textContent="마이크가 허용되지 않았습니다. 주소창 옆 자물쇠에서 마이크를 허용해 주세요"; $("dictWarn").hidden=false; log(`마이크 안 됨: ${e.name}`,"no"); return; }
+  beginRun("마이크 → PC 받아쓰기"); state.micOn=true;
+  const ctx = new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
+  const src = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096,1,1);
+  let buf=[], n=0, startAt=0, queue=Promise.resolve();
+  const CH = 10; // 초
+  proc.onaudioprocess = e => {
+    if(!state.running) return;
+    const d=e.inputBuffer.getChannelData(0); buf.push(new Float32Array(d)); n+=d.length;
+    if(n < ctx.sampleRate*CH) return;
+    const all=new Float32Array(n); let o=0; for(const x of buf){ all.set(x,o); o+=x.length; }
+    buf=[]; n=0; const at=startAt; startAt=(Date.now()-state.t0)/1000;
+    let ss=0; for(let i=0;i<all.length;i+=8) ss+=all[i]*all[i];
+    if(Math.sqrt(ss/(all.length/8)) < 0.004) return; // 조용한 10초는 보내지 않는다
+    const wav=wavOf(all, ctx.sampleRate);
+    queue = queue.then(async()=>{
+      try{ const j=await pcFetch("/stt", wav, "audio/wav"); state.lastInput=Date.now(); if(j.text) addHeard(j.text, at); }
+      catch(err){ log(`받아쓰기 실패: ${err.message||err.code}`,"no"); }
+    });
+  };
+  src.connect(proc); proc.connect(ctx.destination);
+  mic={stream, ctx, proc, src};
+};
+
+// 예비: 웹브라우저 음성 인식(안드로이드 크롬은 다시 켤 때마다 알림음)
+let recog=null;
+function startWebSpeech(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ log("이 웹브라우저는 음성 인식을 지원하지 않습니다","no"); return; }
+  beginRun("웹브라우저 음성 인식"); state.micOn=true; state.webSpeech=true;
+  recog = new SR(); recog.lang="ko-KR"; recog.continuous=true; recog.interimResults=true;
+  recog.onresult = e => { state.lastInput=Date.now(); let interim="";
+    for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i], t=r[0].transcript.trim(); if(!t) continue; if(r.isFinal) addHeard(t); else interim+=t+" "; }
+    if(interim) $("live").textContent=[...(state.live||[]).slice(-1), interim.trim()].join("\n"); };
+  recog.onend = () => { if(state.running && state.webSpeech) setTimeout(()=>{ try{ recog.start(); }catch(_){} }, 300); };
+  try{ recog.start(); }catch(_){}
+}
+const _stopApp = stop;
+stop = function(why){
+  state.micOn=false; state.webSpeech=false;
+  if(recog){ try{ recog.stop(); }catch(_){} recog=null; }
+  if(mic){ try{ mic.proc.disconnect(); mic.src.disconnect(); mic.stream.getTracks().forEach(t=>t.stop()); mic.ctx.close(); }catch(_){} mic=null; }
+  releaseAwake(); _stopApp(why);
+};
+// PC 연결 확인
+$("pcCheck").onclick = async () => {
+  const {pc, tok}=pcConf(); if(!pc){ $("pcOut").textContent="연결 링크로 연 적이 없습니다"; return; }
+  try{ const r=await fetch(pc+"/health", {headers:{"x-gist-token":tok}}); const j=await r.json(); $("pcOut").textContent = r.ok ? `연결됨 · 받아쓰기 ${j.model}(${j.device})` : `안 됨: ${j.error||r.status}`; }
+  catch(_){ $("pcOut").textContent="PC에 닿지 않습니다(PC가 꺼졌거나 링크가 바뀜)"; }
+};
+if(!pcConf().pc) $("pcNote").hidden=false;
 </script>
 
 </body>
