@@ -272,8 +272,10 @@ async function pcFetch(path, body, type="application/json"){
   catch(e){ document.getElementById("pcNote").hidden=false; throw {code:"pc_unreachable", message:"PC에 닿지 않습니다(PC가 꺼졌거나 링크가 바뀜)"}; }
   const j = await r.json().catch(()=>({error:"응답을 읽지 못함"}));
   if(r.status===403){ document.getElementById("pcNote").hidden=false; throw {code:"pc_token", message:"연결 링크가 바뀌었습니다. PC에 나온 새 링크로 여세요"}; }
+  const note=document.getElementById("pcNote");
+  if(j.error==="auth_error"){ note.textContent="PC는 연결됐지만 PC에 저장된 Claude 키가 맞지 않습니다. PC 창을 닫고 '켜기'를 다시 실행해 키를 다시 넣어 주세요(받아쓰기는 그대로 됩니다)."; note.hidden=false; }
   if(!r.ok || j.error) throw {code: String(j.error||"upstream_error").split(" ")[0], message:String(j.error||r.status)};
-  document.getElementById("pcNote").hidden=true;
+  note.hidden=true;
   return j;
 }
 async function askClaude(prompt, {effort="low", search=false, onText}={}){
