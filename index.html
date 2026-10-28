@@ -189,6 +189,7 @@ body{margin:0}
 
 <div class="top">
   <h1>GIST 실시간 시험판</h1>
+  <p style="flex-basis:100%;margin:0;padding:10px 12px;border:1px solid var(--accent);border-radius:10px;color:var(--ink)">회의에서 마이크로 바로 쓰려면 웹앱을 크롬 · 삼성 인터넷 · 사파리에서 여세요: <a href="https://kuroru.github.io/gist-live/" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">kuroru.github.io/gist-live</a>. 이 페이지(Claude 앱 안)는 마이크를 쓸 수 없어 키보드 음성 입력만 됩니다.</p>
   <p>회의를 들으며 1분마다 요약하고, 찾아볼 말을 라벨로 띄웁니다. 끝내면 회의록과 자료를 한 파일로 줍니다.</p>
   <button id="keyBtn" type="button">API 키</button>
 </div>
@@ -244,6 +245,9 @@ body{margin:0}
       <div><b id="sAsk">0</b><span>직접 질문</span></div>
       <div><b id="sLat">-</b><span>답 평균 초</span></div>
     </div>
+
+    <h2>API 키</h2>
+    <div class="row"><button id="keyBtn2" type="button">키 바꾸기 · 지우기</button></div>
 
     <h2>마이크 확인</h2>
     <div class="row"><button id="mic">마이크 요청해 보기</button><span id="micOut" class="note" style="margin:0"></span></div>
@@ -1016,11 +1020,13 @@ const _stopApp = stop;
 stop = function(why){ if(state.micMode){ state.micMode=false; try{ recog && recog.stop(); }catch(_){} } releaseAwake(); _stopApp(why); };
 
 // API 키: 이 기기의 웹브라우저에만 저장한다
-$("keyBtn").onclick = openKey;
-$("keySave").onclick = () => { const v=$("keyIn").value.trim(); if(!v) return; try{ localStorage.setItem("gist_key", v); }catch(_){} $("keyIn").value=""; $("keyBox").hidden=true; log("API 키 저장(이 기기에만)","ok"); };
-$("keyDel").onclick = () => { try{ localStorage.removeItem("gist_key"); }catch(_){} log("API 키 지움","ok"); };
+function syncKeyBtn(){ let has=false; try{ has=!!localStorage.getItem("gist_key"); }catch(_){} $("keyBtn").hidden=has; }
+$("keyBtn").onclick = openKey; $("keyBtn2").onclick = openKey;
+$("keySave").onclick = () => { const v=$("keyIn").value.trim(); if(!v) return; try{ localStorage.setItem("gist_key", v); }catch(_){} $("keyIn").value=""; $("keyBox").hidden=true; syncKeyBtn(); log("API 키 저장(이 기기에만)","ok"); };
+$("keyDel").onclick = () => { try{ localStorage.removeItem("gist_key"); }catch(_){} syncKeyBtn(); log("API 키 지움","ok"); };
 $("keyX").onclick = () => { $("keyBox").hidden=true; };
 try{ if(!localStorage.getItem("gist_key")) openKey(); }catch(_){}
+syncKeyBtn();
 </script>
 
 </body>
