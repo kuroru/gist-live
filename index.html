@@ -29,13 +29,14 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:1
 h1{font-size:18px;font-weight:600;margin:0}
 .top{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;max-width:1100px;margin:0 auto 14px}
 .top p{margin:0;color:var(--sub);font-size:13px}
+.top .wipe{margin-left:auto;align-self:center;background:none;border:1px solid var(--line);color:var(--sub);border-radius:999px;padding:2px 12px;font:inherit;font-size:13px;line-height:1.4;min-height:0!important;cursor:pointer}
 /* 휴대폰: 한 단 · 태블릿: 회의 화면이 폭 전체, 시스템 화면은 아래로 접힘 · PC: 회의 화면 + 오른쪽 시스템 화면 */
 .wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;max-width:1280px;margin:0 auto;align-items:start}
 @media (min-width:1180px){.wrap{grid-template-columns:minmax(0,1fr) minmax(0,380px)}}
 .stage{container-type:inline-size;min-width:0}
 .phone{background:var(--panel);border:1px solid var(--line);border-radius:22px;overflow:hidden;display:flex;flex-direction:column;height:calc(100vh - 110px);height:calc(100dvh - 110px);min-height:520px}
 /* 휴대폰: 브라우저 아래 도구 막대에 가리지 않게 보이는 높이(dvh)에 맞추고 머리말을 줄인다 */
-@media (max-width:700px){body{padding-block:8px}.top{margin-bottom:8px}.top p{display:none}.phone{height:calc(100dvh - 52px);min-height:0;border-radius:16px}}
+@media (max-width:700px){body{padding-block:8px}.top{margin-bottom:8px}.top p{display:none}.phone{height:calc(100dvh - 60px);min-height:0;border-radius:16px}}
 .side{display:flex;flex-direction:column}
 /* 태블릿 폭(회의 화면 640px 이상): 왼쪽 요약 · 답, 오른쪽 제안 · 묻기 */
 @container (min-width:640px){
@@ -194,6 +195,7 @@ body{margin:0}
 
 <div class="top">
   <h1>GIST 실시간 시험판</h1>
+  <button id="wipe" type="button" class="wipe" title="이 기기의 화면과 지난 회의 기록을 지웁니다(PC 연결은 그대로)">↺ 초기화</button>
   <p>회의를 들으며 1분마다 요약하고, 찾아볼 말을 라벨로 띄웁니다. 끝내면 회의록과 자료를 한 파일로 줍니다.</p>
   <p id="pcNote" hidden style="flex-basis:100%;margin:0;padding:10px 12px;border:1px solid var(--bad);border-radius:10px;color:var(--ink)">PC와 연결되지 않았습니다. PC에서 'GIST_PC받아쓰기_켜기'를 실행하고, 나오는 연결 링크로 이 화면을 여세요.</p>
 </div>
@@ -830,6 +832,13 @@ function saveHist(){
   let h=[{label, ps}, ...loadHist()].slice(0,10);
   while(h.length){ try{ localStorage.setItem("gist_hist", JSON.stringify(h)); break; }catch(_){ h.pop(); } }
 }
+// 초기화: 회의 중이 아닐 때 이 기기의 화면과 지난 회의 기록만 지운다(PC 연결 링크는 남겨 다시 회의 시작 가능)
+$("wipe").onclick=()=>{
+  if(state.running){ log("회의 중에는 초기화할 수 없습니다. 끝내기를 먼저 눌러 주세요","no"); return; }
+  if(!confirm("이 기기의 화면과 지난 회의 기록을 모두 지울까요?\nPC 연결은 그대로라 바로 다시 회의를 시작할 수 있습니다.")) return;
+  try{ localStorage.removeItem("gist_hist"); }catch(_){}
+  location.reload(); // 첫 화면(안내문)으로 다시 연다
+};
 function renderHist(){
   const em=$("empty"); if(!em) return; em.querySelector(".hist")?.remove();
   const h=loadHist(); if(!h.length) return;
@@ -1035,6 +1044,7 @@ startLive = async function(){
   try{ stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}}); }
   catch(e){ $("dictWarn").textContent="마이크가 허용되지 않았습니다. 주소창 옆 자물쇠에서 마이크를 허용해 주세요"; $("dictWarn").hidden=false; log(`마이크 안 됨: ${e.name}`,"no"); return; }
   beginRun("마이크 → PC 받아쓰기"); state.micOn=true;
+  pcFetch("/new","{}").catch(()=>{}); // PC에 새 회의 파일을 연다(대화창 분석이 이 회의만 본다)
   const ctx = new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
   const src = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096,1,1);
   let buf=[], n=0, startAt=0, queue=Promise.resolve();
