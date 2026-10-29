@@ -33,7 +33,9 @@ h1{font-size:18px;font-weight:600;margin:0}
 .wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;max-width:1280px;margin:0 auto;align-items:start}
 @media (min-width:1180px){.wrap{grid-template-columns:minmax(0,1fr) minmax(0,380px)}}
 .stage{container-type:inline-size;min-width:0}
-.phone{background:var(--panel);border:1px solid var(--line);border-radius:22px;overflow:hidden;display:flex;flex-direction:column;height:calc(100vh - 110px);min-height:520px}
+.phone{background:var(--panel);border:1px solid var(--line);border-radius:22px;overflow:hidden;display:flex;flex-direction:column;height:calc(100vh - 110px);height:calc(100dvh - 110px);min-height:520px}
+/* 휴대폰: 브라우저 아래 도구 막대에 가리지 않게 보이는 높이(dvh)에 맞추고 머리말을 줄인다 */
+@media (max-width:700px){body{padding-block:8px}.top{margin-bottom:8px}.top p{display:none}.phone{height:calc(100dvh - 52px);min-height:0;border-radius:16px}}
 .side{display:flex;flex-direction:column}
 /* 태블릿 폭(회의 화면 640px 이상): 왼쪽 요약 · 답, 오른쪽 제안 · 묻기 */
 @container (min-width:640px){
