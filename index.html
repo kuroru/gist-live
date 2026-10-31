@@ -1042,7 +1042,7 @@ startLive = async function(){
   const {pc}=pcConf(); if(!pc){ $("pcNote").hidden=false; log("PC 연결 링크로 열어 주세요","no"); return; }
   let stream;
   try{ stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}}); }
-  catch(e){ $("dictWarn").textContent="마이크가 허용되지 않았습니다. 주소창 옆 자물쇠에서 마이크를 허용해 주세요"; $("dictWarn").hidden=false; log(`마이크 안 됨: ${e.name}`,"no"); return; }
+  catch(e){ const m="마이크가 허용되지 않았습니다. 주소창 옆 자물쇠(또는 ⋮ → 설정 → 사이트 설정 → 마이크)에서 이 사이트의 마이크를 허용한 뒤 다시 '회의 시작'을 누르세요"; $("dictWarn").textContent=m; $("dictWarn").hidden=false; log(`마이크 안 됨: ${e.name}`,"no"); alert(m+" ("+e.name+")"); return; }
   beginRun("마이크 → PC 받아쓰기"); state.micOn=true;
   pcFetch("/new","{}").catch(()=>{}); // PC에 새 회의 파일을 연다(대화창 분석이 이 회의만 본다)
   const ctx = new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
