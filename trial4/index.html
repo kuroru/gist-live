@@ -188,6 +188,23 @@ textarea{width:100%;min-height:110px;font-size:14px;font-family:var(--f-mono)}
 .ok{color:var(--accent)} .no{color:var(--bad)} .wa{color:var(--warn)}
 
 body{margin:0}
+#lvl{display:flex;align-items:center;gap:3px;height:22px;margin-bottom:6px}
+#lvl i{display:block;width:4px;height:100%;border-radius:2px;background:var(--accent);transform:scaleY(.12);transform-origin:center;transition:transform .12s ease}
+#liveCard{border-color:var(--accent);background:var(--accent-soft)}
+#liveCard .t{display:flex;align-items:center;gap:6px;font-weight:600}
+#liveCard .dot{width:8px;height:8px;border-radius:50%;background:var(--bad);animation:blink 1s ease-in-out infinite}
+#liveCard .lcnow{font-weight:600;margin:6px 0 4px;line-height:1.5}
+#liveCard .lcl{color:var(--ink);opacity:.9;line-height:1.55;animation:lcin .35s ease both}
+#liveCard .lab{background:transparent;border:1px solid var(--accent);min-height:28px;padding:2px 10px;font-size:13px}
+#liveCard .lcl:not(.done)::after{content:"▍";animation:blink .8s steps(1) infinite}
+#liveCard .lcchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+#liveCard .lcbar{height:4px;border-radius:2px;background:var(--line);margin-top:8px;overflow:hidden}
+#liveCard .lcbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
+#liveCard.wait .lcbar i{animation:shim 1.2s ease-in-out infinite}
+#liveCard .lcst{font-size:12px;color:var(--sub);margin-top:4px}
+@keyframes blink{50%{opacity:.25}}
+@keyframes lcin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes shim{0%{opacity:.35}50%{opacity:1}100%{opacity:.35}}
 </style>
 </head>
 <body>
@@ -202,7 +219,7 @@ body{margin:0}
 
 <div class="wrap">
   <div class="stage"><section class="phone" aria-label="사용자 화면">
-    <div class="live"><div id="nowSum" style="font-weight:600;margin-bottom:4px"></div><div id="live">들리는 말이 여기 두 줄로 지나갑니다</div>
+    <div class="live"><div id="lvl" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div id="nowSum" hidden></div><div id="live">들리는 말이 여기 두 줄로 지나갑니다</div>
       <textarea id="dict" hidden rows="2" placeholder="여기를 누르고 키보드의 마이크를 켜 두세요. 들리는 말이 받아써집니다" aria-label="실시간 받아쓰기"></textarea>
       <div id="dictWarn" hidden>받아쓰기가 멈췄습니다. 키보드 마이크를 다시 눌러 주세요</div></div>
     <nav class="picked" id="picked" hidden aria-label="찾아본 말"></nav>
@@ -400,7 +417,7 @@ async function start(){
 }
 function stop(why){
   if(state.liveMode){ commitDict(true); $("dict").hidden=true; $("dictWarn").hidden=true; state.liveMode=false; if(why==="마침") cut(true); }
-  clearInterval(state.timer); state.running=false; try{ localStorage.removeItem("gist_live"); }catch(_){} $("rec").classList.remove("on"); $("go").textContent="회의 시작"; $("go").classList.remove("end");
+  clearInterval(state.timer); state.running=false; $("liveCard")?.remove(); lvlPush(0, true); try{ localStorage.removeItem("gist_live"); }catch(_){} $("rec").classList.remove("on"); $("go").textContent="회의 시작"; $("go").classList.remove("end");
   if(why==="끝") cut(true);
   log(why==="끝" ? "회의 끝(녹음 끝)" : "회의 마침");
   makeMinutes().then(()=>{ $("pack").classList.add("ready"); packBtn(); saveHist(); log("회의록 · 자료는 아래 '회의록 · 자료' 단추로 봅니다(이 기기에 10건까지 보관)"); });
@@ -473,7 +490,7 @@ ${seg}
 앞 주제: ${state.topic || "없음"}
 고친 말(받아쓰기 오류 → 바른 말, 요약 · 라벨에 바른 말을 쓴다): ${Object.entries(state.fixes).map(([a,b])=>a+"→"+b).join(", ") || "없음"}
 
-1) summary: 이번 구간 요약, 한국어 150자 이내, 정한 것과 미룬 것을 구분.
+1) summary: 이번 구간 요약, 한국어 150자 이내, 정한 것과 미룬 것을 구분. 제안 · 의견("~하죠", "~할까요", "~면 좋겠다")은 결정으로 쓰지 않고 "제안", "논의"로 쓴다. 분명히 정했다는 말이 있을 때만 "결정"이라고 쓴다.
 2) importance: 0 보통, 1 중요(돈 · 기한 · 조건 · 위험이 나옴), 2 핵심(결정이 났거나 결정을 뒤집을 말).
 3) topic: 지금 이야기하는 주제, 10자 안팎 명사. 앞 주제와 같으면 그대로 쓴다.
 4) labels: 참석자가 회의를 멈추고 따로 찾아볼 법한 것(모르는 용어, 회사, 제도, 시세 · 수치, 규정)을 0~4개. 질문 꼴이 아니라 2~10자 명사 라벨로. 이미 낸 것은 빼라.
@@ -525,7 +542,7 @@ function addCard(t, text, imp=0, labs=[], ctx=""){
     b.onclick=()=>openSheet(b, k, ctx, x.query, x.brief);
     p.append(b); used.add(k); state.stats.sug++;
   }
-  feed.append(c); feed.scrollTop=feed.scrollHeight; state.stats.cards++;
+  feed.append(c); if($("liveCard")){ feed.append($("liveCard")); lcReset(); } feed.scrollTop=feed.scrollHeight; state.stats.cards++;
   return used;
 }
 function sugAtBottom(){ const g=$("sug"); return g.scrollTop+g.clientHeight >= g.scrollHeight-24; }
@@ -1055,19 +1072,20 @@ startLive = async function(){
   if(!resumed) pcFetch("/new","{}").catch(()=>{}); // PC에 새 회의 파일을 연다(이어 가면 같은 파일에 계속 적는다)
   const ctx = new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
   const src = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096,1,1);
-  let buf=[], n=0, startAt=0, queue=Promise.resolve();
+  let buf=[], n=0, startAt=0, queue=Promise.resolve(), sil=0;
   const CH = 10; // 초
   proc.onaudioprocess = e => {
     if(!state.running) return;
     const d=e.inputBuffer.getChannelData(0); buf.push(new Float32Array(d)); n+=d.length;
-    if(n < ctx.sampleRate*CH) return;
+    let fs=0; for(let i=0;i<d.length;i+=8) fs+=d[i]*d[i]; const lv=Math.sqrt(fs/(d.length/8)); lvlPush(lv); sil = lv<0.008 ? sil+1 : 0;
+    const dur=n/ctx.sampleRate; if(!(dur>=6 || (dur>=1.5 && sil>=3))) return; // 0.75초쯤 조용하면 그 자리에서 보낸다(길어도 6초)
     const all=new Float32Array(n); let o=0; for(const x of buf){ all.set(x,o); o+=x.length; }
-    buf=[]; n=0; const at=startAt; startAt=(Date.now()-state.t0)/1000;
+    buf=[]; n=0; sil=0; const at=startAt; startAt=(Date.now()-state.t0)/1000;
     let ss=0; for(let i=0;i<all.length;i+=8) ss+=all[i]*all[i];
     if(Math.sqrt(ss/(all.length/8)) < 0.004) return; // 조용한 10초는 보내지 않는다
     const wav=wavOf(all, ctx.sampleRate);
     queue = queue.then(async()=>{
-      try{ const j=await pcFetch("/stt", wav, "audio/wav"); state.lastInput=Date.now(); const t=ghostCut(j.text||""); if(t){ addHeard(t, at); liveSum(); saveLive(); } }
+      try{ const j=await pcFetch("/stt", wav, "audio/wav"); state.lastInput=Date.now(); const t=ghostCut(j.text||""); if(t){ addHeard(t, at); lcLine(t); liveSum(); saveLive(); } }
       catch(err){ log(`받아쓰기 실패: ${err.message||err.code}`,"no"); }
     });
   };
@@ -1104,6 +1122,29 @@ $("pcCheck").onclick = async () => {
 if(!pcConf().pc) $("pcNote").hidden=false;
 </script>
 <script>
+// 느끼는 실시간: 목소리 파형, 본문 맨 아래 '지금 쓰는 카드'(받아쓴 말이 타자 치듯 쌓이고, 숫자는 칩으로, 지금 이야기 한 줄, 1분 카드까지 진행 막대)
+const lvlH=[0,0,0,0,0,0,0];
+function lvlPush(v, reset){ if(reset){ lvlH.fill(0); } else { lvlH.push(Math.min(1, v*14)); lvlH.shift(); }
+  const bars=document.querySelectorAll("#lvl i"); bars.forEach((b,i)=>b.style.transform=`scaleY(${Math.max(.12, lvlH[i])})`); }
+function lcEnsure(){ let c=$("liveCard"); if(c) return c; $("empty")?.remove();
+  c=document.createElement("div"); c.id="liveCard"; c.className="card";
+  c.innerHTML='<div class="t"><span class="dot"></span>지금 쓰는 카드 <span class="lct"></span></div><div class="lcnow"></div><div class="lclines"></div><div class="lcchips"></div><div class="lcbar"><i></i></div><div class="lcst"></div>';
+  $("feed").append(c); return c; }
+function lcReset(){ const c=$("liveCard"); if(!c) return; c.querySelector(".lclines").innerHTML=""; c.querySelector(".lcchips").innerHTML=""; }
+function chipsOf(s){ const re=/\d[\d,.]*\s*(?:조|억|천만|백만|만|천)?\s*(?:원|달러|%|퍼센트|개월|년|월|일|주|명|곳|평|개|건|층|시간)|\d[\d,.]*\s*(?:조|억|천만|백만|만)/g;
+  return [...new Set((s.match(re)||[]).map(x=>x.replace(/\s+/g," ").trim()))].slice(0,4); }
+function lcLine(s){ const c=lcEnsure(), box=c.querySelector(".lclines"), d=document.createElement("div"); d.className="lcl"; box.append(d);
+  let i=0; const tick=()=>{ i+=2; d.textContent=s.slice(0,i); if(i<s.length) setTimeout(tick,28); else d.classList.add("done"); }; tick();
+  while(box.children.length>6) box.firstChild.remove();
+  const cb=c.querySelector(".lcchips"); for(const k of chipsOf(s)) if(![...cb.children].some(x=>x.textContent===k)){ const b=document.createElement("span"); b.className="lab"; b.textContent=k; cb.append(b); }
+  const f=$("feed"); f.scrollTop=f.scrollHeight; }
+setInterval(()=>{ if(!state.running || !state.liveMode) return; const c=lcEnsure(), el=state.t-state.lastCut;
+  c.querySelector(".lct").textContent="· "+fmt(state.lastCut)+"부터";
+  c.querySelector(".lcnow").textContent = nowSum ? "지금 이야기: "+nowSum : (c.querySelector(".lclines").children.length ? "지금 이야기를 정리하는 중…" : "듣고 있습니다…");
+  const bar=c.querySelector(".lcbar i"), st=c.querySelector(".lcst"), late=state.busy || el>=60;
+  c.classList.toggle("wait", late); bar.style.width = late ? "100%" : Math.min(100, el/60*100)+"%";
+  st.textContent = late ? "카드로 정리하는 중…" : `정리 중 · ${Math.max(1, Math.ceil(60-el))}초 뒤 카드로 정리`;
+}, 250);
 let nowSum="", sumBusy=false, sumSeq=0, sumN=0, liveCards=[];
 function saveLive(){ try{ localStorage.setItem("gist_live", JSON.stringify({at:Date.now(), t0:state.t0, lines:state.lines.slice(-400), nowSum, cards:liveCards.slice(-120)})); }catch(_){} }
 async function liveSum(){ // 새로 도착한 말로 '지금 요약'을 고쳐 쓰고, 18번(약 3분)마다 처음부터 다시 요약해 오류가 쌓이지 않게 한다
@@ -1111,7 +1152,7 @@ async function liveSum(){ // 새로 도착한 말로 '지금 요약'을 고쳐 �
   const fresh=state.lines.filter(l=>l.a>sumSeq); if(!fresh.length) return;
   sumBusy=true; const upto=state.seq; sumN++;
   const full=sumN%18===0, src=full ? state.lines.slice(-60) : fresh;
-  const p=`너는 대면 회의 보조 앱 GIST다. ${full?"아래 회의 글로 지금까지의 흐름을 처음부터 요약한다.":"지금까지 요약을 새로 들어온 말로 고쳐 쓴다. 새 내용이 없으면 앞 요약을 그대로 둔다."} 한국어 80자 이내(넘기지 않는다), 띄어쓰기를 지킨 한두 문장으로 지금 무슨 이야기인지 한눈에 보이게. 정한 것이 있으면 앞에 둔다.
+  const p=`너는 대면 회의 보조 앱 GIST다. ${full?"아래 회의 글로 지금까지의 흐름을 처음부터 요약한다.":"지금까지 요약을 새로 들어온 말로 고쳐 쓴다. 새 내용이 없으면 앞 요약을 그대로 둔다."} 한국어 80자 이내(넘기지 않는다), 띄어쓰기를 지킨 한두 문장으로 지금 무슨 이야기인지 한눈에 보이게. 분명히 정했다는 말이 있을 때만 "결정"이라 쓰고 앞에 둔다. 제안 · 의견("~하죠", "~할까요")은 "제안", "논의 중"으로 쓴다.
 ${full?"":"지금까지 요약: "+(nowSum||"없음")+"\n"}${full?"회의 글":"새로 들어온 말"}:
 ${src.map(l=>l.s).join("\n")}
 JSON만: {"summary":"..."}`;
