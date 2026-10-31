@@ -458,7 +458,8 @@ function tick(sp){
 async function cut(final){
   if(state.busy){ state.finalPending = final || state.finalPending; return; }
   const from = state.lastCut, to = state.t; state.lastCut = state.t;
-  const seg = state.lines.filter(l=>l.t>=from && l.t<to+(final?1e9:0)).map(l=>`[${fmt(l.t)}] ${l.s}`).join("\n");
+  const seg = (state.liveMode ? state.lines.filter(l=>l.a>(state.cutSeq||0)) : state.lines.filter(l=>l.t>=from && l.t<to+(final?1e9:0))).map(l=>`[${fmt(l.t)}] ${l.s}`).join("\n");
+  if(state.liveMode) state.cutSeq=state.seq||0;
   if(!seg.trim()) return;
   if(!sample){ addCard(from, "(Claude 꺼짐) " + seg.slice(0,120)+"…"); return; }
   state.busy=true; const t0=performance.now();
@@ -1006,7 +1007,7 @@ async function keepAwake(){ try{ wake = await navigator.wakeLock.request("screen
 function releaseAwake(){ try{ wake && wake.release(); }catch(_){} wake=null; }
 document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && state.running) keepAwake(); });
 function addHeard(t, at){
-  const L={t: at ?? (Date.now()-state.t0)/1000, s:t};
+  const L={t: at ?? (Date.now()-state.t0)/1000, s:t, a:(state.seq=(state.seq||0)+1)}; // a: 도착 순번(요약 구간은 도착 순서로 자른다)
   for(const a in state.fixes) if(L.s.includes(a)){ L.raw ??= L.s; L.s=L.s.split(a).join(state.fixes[a]); }
   state.lines.push(L); state.lines.sort((a,b)=>a.t-b.t); state.i=state.lines.length;
   state.live=[...(state.live||[]).slice(-1), L.s]; $("live").textContent=state.live.join("\n");
