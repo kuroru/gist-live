@@ -1103,6 +1103,11 @@ $("pcCheck").onclick = async () => {
 };
 if(!pcConf().pc) $("pcNote").hidden=false;
 </script>
-
+<script>
+let pcSavedLen=0;
+function pcSaveMinutes(){ try{ if(!state.minutes || !pcConf().pc) return; const h=buildHtml(); if(h.length===pcSavedLen) return; pcSavedLen=h.length;
+  pcFetch("/save", h, "text/html").then(j=>log(`PC에 회의록 저장: ${j.file||""}`,"ok")).catch(e=>{ pcSavedLen=0; log(`PC 저장 실패: ${e.message||e.code}`,"no"); }); }catch(_){} }
+const _packBtn0=window.packBtn; window.packBtn=function(){ _packBtn0(); if($("pack").classList.contains("ready") && !(state.pending>0)) setTimeout(pcSaveMinutes, 300); };
+</script>
 </body>
 </html>

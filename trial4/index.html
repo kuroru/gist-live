@@ -1154,6 +1154,12 @@ $("pcCheck").onclick = async () => {
 if(!pcConf().pc) $("pcNote").hidden=false;
 </script>
 <script>
+let pcSavedLen=0;
+function pcSaveMinutes(){ try{ if(!state.minutes || !pcConf().pc) return; const h=buildHtml(); if(h.length===pcSavedLen) return; pcSavedLen=h.length;
+  pcFetch("/save", h, "text/html").then(j=>log(`PC에 회의록 저장: ${j.file||""}`,"ok")).catch(e=>{ pcSavedLen=0; log(`PC 저장 실패: ${e.message||e.code}`,"no"); }); }catch(_){} }
+const _packBtn0=window.packBtn; window.packBtn=function(){ _packBtn0(); if($("pack").classList.contains("ready") && !(state.pending>0)) setTimeout(pcSaveMinutes, 300); };
+</script>
+<script>
 // 느끼는 실시간: 목소리 파형, 본문 맨 아래 '지금 쓰는 카드'(받아쓴 말이 타자 치듯 쌓이고, 숫자는 칩으로, 지금 이야기 한 줄, 1분 카드까지 진행 막대)
 // 라벨 창: 처음 보는 말이면 뜻 후보 1~3을 먼저 보여 주고 고르게 한다. 고른 뜻은 이 기기와 PC에 기억해 다음부터 바로 그 뜻으로 찾는다
 let termDict={}; try{ termDict=JSON.parse(localStorage.getItem("gist_terms")||"{}"); }catch(_){}
