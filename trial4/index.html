@@ -522,7 +522,7 @@ JSON만 답한다: {"summary":"...","importance":0,"topic":"...","labels":[{"lab
       state.asked.add(k); labs.push({k, query:String(x.query||k), brief:String(x.brief||"")});
     }
     let inl=new Set();
-    if(r && typeof r.summary==="string"){ state.summaries.push(r.summary.replace(/\[\[|\]\]/g,"")); inl=addCard(from, r.summary, imp, labs, seg); if(state.liveMode){ liveCards.push({t:from, text:r.summary, imp}); saveLive(); } }
+    if(r && typeof r.summary==="string"){ state.summaries.push(r.summary.replace(/\[\[|\]\]/g,"")); inl=addCard(from, r.summary, imp, labs, seg); if(state.liveMode){ liveCards.push({t:from, text:r.summary, imp}); saveLive(); pcLog({kind:"card", t:from, text:r.summary, imp, labels:labs.map(x=>x.k)}); } }
     const topic=String(r?.topic||"").trim();
     if(topic && state.topic && topic!==state.topic) topicShift(topic);
     if(topic) state.topic=topic;
@@ -703,7 +703,7 @@ $("shClose").onclick=()=>{ $("sheet").hidden=true; };
 
 // 직접 질문: 검색어를 먼저 뽑고, 같은 짧은 답 · 출처 · 자료 만들기 흐름으로
 $("ask").onsubmit = async e => {
-  e.preventDefault(); const text=$("q").value.trim(); if(!text) return; $("q").value="";
+  e.preventDefault(); const text=$("q").value.trim(); if(!text) return; $("q").value=""; pcLog({kind:"ask", text});
   $("empty")?.remove();
   
   const ctx = state.lines.filter(l=>l.t<=state.t && l.t>=state.t-180).map(l=>`[${fmt(l.t)}] ${l.s}`).join("\n")
@@ -1051,7 +1051,7 @@ function beginRun(label){
   state.timer = setInterval(()=>{
     state.t=(Date.now()-state.t0)/1000; $("clock").textContent=fmt(state.t);
     $("dictWarn").hidden = !(state.micOn && Date.now()-state.lastInput>45000);
-    if(!state.busy && state.t-state.lastCut>=60) cut(false);
+    if(!state.busy && state.t-state.lastCut>=CUTSEC) cut(false);
     fadeLabels();
   }, 500);
 }
@@ -1093,7 +1093,7 @@ startLive = async function(){
     if(!state.running) return;
     const d=e.inputBuffer.getChannelData(0); buf.push(new Float32Array(d)); n+=d.length;
     let fs=0; for(let i=0;i<d.length;i+=8) fs+=d[i]*d[i]; const lv=Math.sqrt(fs/(d.length/8)); lvlPush(lv); sil = lv<0.008 ? sil+1 : 0;
-    const dur=n/ctx.sampleRate; if(!(dur>=6 || (dur>=1.5 && sil>=3))) return; // 0.75초쯤 조용하면 그 자리에서 보낸다(길어도 6초)
+    const dur=n/ctx.sampleRate; if(!(dur>=6 || (dur>=2 && sil>=3))) return; // 0.75초쯤 조용하면 그 자리에서 보낸다(길어도 6초)
     const all=new Float32Array(n); let o=0; for(const x of buf){ all.set(x,o); o+=x.length; }
     buf=[]; n=0; sil=0; const at=startAt; startAt=(Date.now()-state.t0)/1000;
     let ss=0; for(let i=0;i<all.length;i+=8) ss+=all[i]*all[i];
@@ -1138,6 +1138,8 @@ if(!pcConf().pc) $("pcNote").hidden=false;
 </script>
 <script>
 // 느끼는 실시간: 목소리 파형, 본문 맨 아래 '지금 쓰는 카드'(받아쓴 말이 타자 치듯 쌓이고, 숫자는 칩으로, 지금 이야기 한 줄, 1분 카드까지 진행 막대)
+const CUTSEC=30; // 요약 카드 주기(초)
+function pcLog(rec){ if(state.liveMode) pcFetch("/log", JSON.stringify(rec)).catch(()=>{}); } // 화면 기록을 PC 회의 폴더에도 남긴다
 const lvlH=[0,0,0,0,0,0,0];
 function lvlPush(v, reset){ if(reset){ lvlH.fill(0); } else { lvlH.push(Math.min(1, v*14)); lvlH.shift(); }
   const bars=document.querySelectorAll("#lvl i"); bars.forEach((b,i)=>b.style.transform=`scaleY(${Math.max(.12, lvlH[i])})`); }
@@ -1148,7 +1150,7 @@ function lcEnsure(){ let c=$("liveCard"); if(c) return c; $("empty")?.remove();
 // 이름 · 용어 라벨: '지금 이야기'를 고쳐 쓸 때 함께 뽑아 몇 초 만에 가로 칩으로 띄우고, 누르면 찾아본 결과 창을 연다
 function lcTerm(k){ if(!k || k.length<2 || state.asked.has(k)) return; state.asked.add(k);
   const c=lcEnsure(), cb=c.querySelector(".lcchips"), b=document.createElement("button"); b.type="button"; b.className="lab tm"; b.textContent=k;
-  b.onclick=()=>openSheet(b, k, state.lines.slice(-12).map(l=>l.s).join("\n"), k, ""); cb.append(b); state.stats.sug++; }
+  b.onclick=()=>openSheet(b, k, state.lines.slice(-12).map(l=>l.s).join("\n"), k, ""); cb.append(b); state.stats.sug++; pcLog({kind:"label", k}); }
 function lcReset(){ const c=$("liveCard"); if(!c) return; c.querySelector(".lclines").innerHTML="";
   c.querySelectorAll(".lcchips .lab:not(.tm)").forEach(x=>x.remove()); const tms=[...c.querySelectorAll(".lcchips .tm")]; tms.slice(0,-6).forEach(x=>x.remove()); } // 이름 라벨은 최근 6개를 남긴다
 function chipsOf(s){ const re=/\d[\d,.]*\s*(?:조|억|천만|백만|만|천)?\s*(?:원|달러|%|퍼센트|개월|년|월|일|주|명|곳|평|개|건|층|시간)|\d[\d,.]*\s*(?:조|억|천만|백만|만)/g;
@@ -1166,6 +1168,7 @@ function wordEdit(span, d, w){ if(span.querySelector("input")) return;
   span.replaceChildren(inp); inp.focus(); inp.select();
   let done=false; const commit=()=>{ if(done) return; done=true; const v=inp.value.trim();
     if(v && v!==core){ const L=d._L;
+      pcLog({kind:"fix", from:core, to:v, line:L.raw||L.s});
       if(core.length>=2){ applyFix(core, v); saveFixes(); }
       else { L.raw ??= L.s; L.s=L.s.replace(core, v); log(`고친 말(이 줄만): ${core} → ${v}`,"ok"); } }
     lcRefresh(); };
@@ -1178,7 +1181,7 @@ document.addEventListener("click", e=>{ const p=e.target.closest("#feed .card:no
   p.onblur=()=>{ p.contentEditable="false"; p.classList.remove("editing"); const after=p.textContent.trim(); if(!after || after===before) return;
     state.summaries=state.summaries.map(x=>x===before ? after : x);
     for(const x of liveCards) if(x.text.replace(/\[\[|\]\]/g,"")===before) x.text=after;
-    saveLive(); log("요약 카드를 고쳤습니다","ok"); }; });
+    saveLive(); pcLog({kind:"card_edit", before, after}); log("요약 카드를 고쳤습니다","ok"); }; });
 // 다른 앱(키보드 음성 입력 등)이 마이크를 가져가면 지금 쓰는 카드에 알리고, 소리 처리가 멈추면 다시 켠다
 function micGuard(stream, ctx){ const tr=stream.getAudioTracks()[0]; if(!tr) return;
   tr.onmute=()=>{ state.micWarn="다른 앱(키보드 음성 입력 등)이 마이크를 쓰는 동안 듣기가 멈춥니다. 끝나면 이어집니다"; log("마이크 잠시 멈춤","no"); };
@@ -1194,9 +1197,9 @@ function lcLine(L){ if(!L) return; const s=L.s, c=lcEnsure(), box=c.querySelecto
 setInterval(()=>{ if(!state.running || !state.liveMode) return; const c=lcEnsure(), el=state.t-state.lastCut;
   c.querySelector(".lct").textContent="· "+fmt(state.lastCut)+"부터";
   c.querySelector(".lcnow").textContent = nowSum ? "지금 이야기: "+nowSum : (c.querySelector(".lclines").children.length ? "지금 이야기를 정리하는 중…" : "듣고 있습니다…");
-  const bar=c.querySelector(".lcbar i"), st=c.querySelector(".lcst"), late=state.busy || el>=60;
-  c.classList.toggle("wait", late); bar.style.width = late ? "100%" : Math.min(100, el/60*100)+"%";
-  st.textContent = state.micWarn ? state.micWarn : late ? "카드로 정리하는 중…" : `정리 중 · ${Math.max(1, Math.ceil(60-el))}초 뒤 카드로 정리`;
+  const bar=c.querySelector(".lcbar i"), st=c.querySelector(".lcst"), late=state.busy || el>=CUTSEC;
+  c.classList.toggle("wait", late); bar.style.width = late ? "100%" : Math.min(100, el/CUTSEC*100)+"%";
+  st.textContent = state.micWarn ? state.micWarn : late ? "카드로 정리하는 중…" : `정리 중 · ${Math.max(1, Math.ceil(CUTSEC-el))}초 뒤 카드로 정리`;
   st.classList.toggle("warn", !!state.micWarn);
 }, 250);
 let nowSum="", sumBusy=false, sumSeq=0, sumN=0, liveCards=[];
