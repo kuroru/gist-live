@@ -195,7 +195,6 @@ body{margin:0}
 #liveCard .dot{width:8px;height:8px;border-radius:50%;background:var(--bad);animation:blink 1s ease-in-out infinite}
 #liveCard .lcnow{font-weight:600;margin:6px 0 4px;line-height:1.5}
 #liveCard .lcl{color:var(--ink);opacity:.9;line-height:1.55;animation:lcin .35s ease both}
-#liveCard .lab{background:transparent;border:1px solid var(--accent);min-height:28px;padding:2px 10px;font-size:13px}
 #liveCard .lcl:not(.done)::after{content:"▍";animation:blink .8s steps(1) infinite}
 #liveCard .lcchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 #liveCard .lcbar{height:4px;border-radius:2px;background:var(--line);margin-top:8px;overflow:hidden}
@@ -209,8 +208,22 @@ body{margin:0}
 #liveCard .raw{display:block;font-size:11px;color:var(--sub)}
 #feed .card:not(#liveCard) > p{cursor:text}
 #feed .card p.editing{outline:2px solid var(--accent);border-radius:6px;padding:2px 4px}
-#sug .lab{min-height:28px;padding:2px 10px;font-size:13px;font-weight:600}
+/* 라벨 규칙(GIST 시험판, 2026-11-01): 어느 자리든 같은 크기 · 모양, 색만 역할을 나타낸다
+   이름(.tm) = 채움 · 회의에 나온 말(.lab) = 테두리 · 연관 추천(.rel) = 점선 · 고른 라벨(#picked) = 테두리 */
+:root{--lab-h:30px;--lab-fs:13px;--lab-px:10px;--lab-gap:6px}
+body .lab, body .picked button{min-height:var(--lab-h);padding:2px var(--lab-px);font-size:var(--lab-fs);font-weight:600;border-radius:999px;line-height:1.2}
+body .lab{background:transparent;border:1px solid var(--accent);color:var(--ink)}
+body .lab.rel{border-style:dashed}
 #sug .lab.rel::before{font-size:10px;margin-right:4px}
+#sug::before,#picked::before{flex-basis:100%;font-size:11px;color:var(--sub);font-weight:600}
+#sug::before{content:"AI 추천 연관 주제"}
+#picked::before{content:"내가 고른 라벨";flex:none;align-self:center;margin-right:4px}
+/* 라벨 창: 작게, 바깥을 누르면 닫힘, 20초 동안 안 만지면 닫힘 */
+#sheet{max-height:36vh;padding:10px 12px;font-size:14px;line-height:1.5}
+#sheet .pick{display:flex;flex-direction:column;gap:6px;margin:6px 0}
+#sheet .pick button{text-align:left;min-height:36px;padding:6px 10px;border:1px solid var(--accent);border-radius:10px;background:transparent;color:var(--ink);font:inherit}
+#sheet .pick input{font:inherit;padding:6px 8px;border:1px solid var(--accent);border-radius:8px;background:var(--panel);color:var(--ink)}
+#sheet .shSt{font-size:12px;color:var(--sub)}
 #sug .topic{font-size:11px;padding-top:2px;margin-top:0}
 @media (max-width:1179px){#sug{max-height:13vh;min-height:0;gap:6px;padding:6px 16px}}
 @keyframes blink{50%{opacity:.25}}
@@ -531,7 +544,7 @@ JSON만 답한다: {"summary":"...","importance":0,"topic":"...","labels":[{"lab
     if(topic && state.topic && topic!==state.topic) topicShift(topic);
     if(topic) state.topic=topic;
     let n=0;
-    for(const x of labs){ if(inl.has(x.k)) continue; addSug(x.k, seg, x.query, n++, x.brief); }
+    for(const x of labs){ if(inl.has(x.k)) continue; lcTerm(x.k, true); }
     for(const x of (Array.isArray(r?.related)?r.related:[]).slice(0,2)){
       const k=String(x.label||"").trim(); if(!k || state.asked.has(k)) continue; state.asked.add(k);
       addSug(k, seg, String(x.query||k), n++, String(x.brief||""), true);
@@ -1142,6 +1155,27 @@ if(!pcConf().pc) $("pcNote").hidden=false;
 </script>
 <script>
 // 느끼는 실시간: 목소리 파형, 본문 맨 아래 '지금 쓰는 카드'(받아쓴 말이 타자 치듯 쌓이고, 숫자는 칩으로, 지금 이야기 한 줄, 1분 카드까지 진행 막대)
+// 라벨 창: 처음 보는 말이면 뜻 후보 1~3을 먼저 보여 주고 고르게 한다. 고른 뜻은 이 기기와 PC에 기억해 다음부터 바로 그 뜻으로 찾는다
+let termDict={}; try{ termDict=JSON.parse(localStorage.getItem("gist_terms")||"{}"); }catch(_){}
+const _openSheet0 = window.openSheet;
+let sheetTimer=null; function sheetArm(){ clearTimeout(sheetTimer); sheetTimer=setTimeout(()=>{ $("sheet").hidden=true; }, 20000); }
+document.addEventListener("pointerdown", e=>{ const sh=$("sheet"); if(sh.hidden) return; if(sh.contains(e.target)){ sheetArm(); return; } if(!e.target.closest(".lab,.term,.picked button")) sh.hidden=true; }, true);
+window.openSheet = function(b, keyword, ctx, query, brief){
+  const go=(meaning)=>{ const m=meaning ? `${keyword} = ${meaning}` : ""; _openSheet0(b, keyword, m ? ctx+"\n(사용자 확인: "+m+")" : ctx, meaning ? keyword+" "+meaning : query, meaning||brief); sheetArm(); };
+  if(termDict[keyword] || labelCache[keyword]?.started) return go(termDict[keyword]);
+  $("sheet").dataset.k="?"+keyword; $("shTitle").textContent=keyword; const body=$("shBody"); body.replaceChildren();
+  const q=document.createElement("p"); q.textContent="어떤 뜻인가요? 고르면 그 뜻으로 찾아봅니다."; const box=document.createElement("div"); box.className="pick";
+  const st=document.createElement("span"); st.className="shSt"; st.textContent="뜻 후보를 찾는 중…"; body.append(q, box, st); $("sheet").hidden=false; sheetArm();
+  const choose=(m)=>{ if(m){ termDict[keyword]=m; try{ localStorage.setItem("gist_terms", JSON.stringify(termDict)); }catch(_){} pcLog({kind:"term", k:keyword, meaning:m}); } go(m); };
+  const other=document.createElement("button"); other.type="button"; other.textContent="다른 뜻이에요(직접 쓰기)";
+  other.onclick=()=>{ const i=document.createElement("input"); i.placeholder=keyword+"의 뜻을 짧게"; other.replaceWith(i); i.focus(); i.onkeydown=e=>{ if(e.key==="Enter" && !e.isComposing && i.value.trim()) choose(i.value.trim()); }; };
+  const skip=document.createElement("button"); skip.type="button"; skip.textContent="모르겠어요(그냥 찾기)"; skip.onclick=()=>choose("");
+  (async()=>{ let cands=[];
+    try{ const r=await gistSample.json(`회의 중 나온 '${keyword}'가 무엇을 가리킬 수 있는지, 회의 맥락에 맞는 뜻 후보를 가능성 높은 순서로 최대 3개 쓴다. 한 후보는 15자 안팎의 짧은 설명(예: "PNC 파이낸셜(미국 은행)"). 맥락에서 뜻이 분명하면 1개만.\n회의 맥락:\n${String(ctx||"").slice(-800)}\nJSON만: {"cands":["...","..."]}`,{modelTier:"quick"}); cands=(Array.isArray(r?.cands)?r.cands:[]).map(String).filter(Boolean).slice(0,3); }catch(_){}
+    if($("sheet").dataset.k!=="?"+keyword) return;
+    cands.forEach((m,i)=>{ const x=document.createElement("button"); x.type="button"; x.textContent=`${i+1}. ${m}`; x.onclick=()=>choose(m); box.append(x); });
+    box.append(other, skip); st.textContent = cands.length ? "맞는 뜻이 없으면 '다른 뜻'을 눌러 알려 주세요" : "후보를 찾지 못했습니다. 뜻을 알려 주시면 그 뜻으로 찾습니다"; })();
+};
 const CUTSEC=25; // 요약 카드 주기(초): 25초 + 요약 호출 약 7초 → 첫 카드 약 32초
 function pcLog(rec){ if(state.liveMode) pcFetch("/log", JSON.stringify(rec)).catch(()=>{}); } // 화면 기록을 PC 회의 폴더에도 남긴다
 const lvlH=[0,0,0,0,0,0,0];
@@ -1152,7 +1186,8 @@ function lcEnsure(){ let c=$("liveCard"); if(c) return c; $("empty")?.remove();
   c.innerHTML='<div class="t"><span class="dot"></span>지금 쓰는 카드 <span class="lct"></span></div><div class="lcnow"></div><div class="lclines"></div><div class="lcchips"></div><div class="lcbar"><i></i></div><div class="lcst"></div>';
   $("feed").append(c); return c; }
 // 이름 · 용어 라벨: '지금 이야기'를 고쳐 쓸 때 함께 뽑아 몇 초 만에 가로 칩으로 띄우고, 누르면 찾아본 결과 창을 연다
-function lcTerm(k){ if(!k || k.length<2 || state.asked.has(k)) return; state.asked.add(k);
+function lcTerm(k, force){ if(!k || k.length<2 || (!force && state.asked.has(k))) return; state.asked.add(k);
+  const c0=$("liveCard"); if(c0 && [...c0.querySelectorAll(".lab.tm")].some(x=>x.textContent===k)) return;
   const c=lcEnsure(), cb=c.querySelector(".lcchips"), b=document.createElement("button"); b.type="button"; b.className="lab tm"; b.textContent=k;
   b.onclick=()=>openSheet(b, k, state.lines.slice(-12).map(l=>l.s).join("\n"), k, ""); cb.append(b); state.stats.sug++; pcLog({kind:"label", k}); }
 function lcReset(){ const c=$("liveCard"); if(!c) return; c.querySelector(".lclines").innerHTML="";
