@@ -274,6 +274,13 @@ body{margin:0}
     document.addEventListener("DOMContentLoaded",()=>{ document.body.innerHTML='<p style="padding:24px;font:16px/1.6 sans-serif">웹브라우저로 열었습니다. 이 카카오톡 창은 닫아도 됩니다.</p>'; });
     throw new Error("kakao-redirect");
   }
+  // Claude 앱 같은 앱 안 브라우저(안드로이드 WebView)면 휴대폰 웹브라우저로 넘긴다(2026-11-01 마스터 지시: Claude 안에서 실행되게 하지 마)
+  if(/Android/i.test(navigator.userAgent) && /; wv\)|Claude/i.test(navigator.userAgent)){
+    const url=location.href;
+    location.href="intent://"+location.host+location.pathname+location.search+"#Intent;scheme=https;end";
+    document.addEventListener("DOMContentLoaded",()=>{ const p=document.createElement("p"); p.style.cssText="padding:24px;font:16px/1.6 sans-serif;word-break:break-all"; p.textContent="웹브라우저(삼성 인터넷 · 웨일 · 크롬)로 여는 중입니다. 열리지 않으면 아래 주소를 복사해 웹브라우저에서 여세요. "+url; document.body.replaceChildren(p); });
+    throw new Error("webview-redirect");
+  }
 })();
 (function(){ // 연결 링크(?pc=…&t=…)로 열면 이 기기에 기억하고 주소창에서 지운다
   const q=new URLSearchParams(location.search);

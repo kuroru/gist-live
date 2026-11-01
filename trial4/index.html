@@ -202,6 +202,12 @@ body{margin:0}
 #liveCard .lcbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
 #liveCard.wait .lcbar i{animation:shim 1.2s ease-in-out infinite}
 #liveCard .lcst{font-size:12px;color:var(--sub);margin-top:4px}
+#liveCard .lcst.warn{color:var(--bad);font-weight:600}
+#liveCard .w{cursor:pointer;border-bottom:1px dotted var(--sub)}
+#liveCard .wi{font:inherit;width:auto;padding:0 3px;border:1px solid var(--accent);border-radius:4px;background:var(--panel);color:var(--ink)}
+#liveCard .raw{display:block;font-size:11px;color:var(--sub)}
+#feed .card:not(#liveCard) > p{cursor:text}
+#feed .card p.editing{outline:2px solid var(--accent);border-radius:6px;padding:2px 4px}
 @keyframes blink{50%{opacity:.25}}
 @keyframes lcin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 @keyframes shim{0%{opacity:.35}50%{opacity:1}100%{opacity:.35}}
@@ -290,6 +296,13 @@ body{margin:0}
     location.href="kakaotalk://web/openExternal?url="+encodeURIComponent(location.href);
     document.addEventListener("DOMContentLoaded",()=>{ document.body.innerHTML='<p style="padding:24px;font:16px/1.6 sans-serif">웹브라우저로 열었습니다. 이 카카오톡 창은 닫아도 됩니다.</p>'; });
     throw new Error("kakao-redirect");
+  }
+  // Claude 앱 같은 앱 안 브라우저(안드로이드 WebView)면 휴대폰 웹브라우저로 넘긴다(2026-11-01 마스터 지시: Claude 안에서 실행되게 하지 마)
+  if(/Android/i.test(navigator.userAgent) && /; wv\)|Claude/i.test(navigator.userAgent)){
+    const url=location.href;
+    location.href="intent://"+location.host+location.pathname+location.search+"#Intent;scheme=https;end";
+    document.addEventListener("DOMContentLoaded",()=>{ const p=document.createElement("p"); p.style.cssText="padding:24px;font:16px/1.6 sans-serif;word-break:break-all"; p.textContent="웹브라우저(삼성 인터넷 · 웨일 · 크롬)로 여는 중입니다. 열리지 않으면 아래 주소를 복사해 웹브라우저에서 여세요. "+url; document.body.replaceChildren(p); });
+    throw new Error("webview-redirect");
   }
 })();
 (function(){ // 연결 링크(?pc=…&t=…)로 열면 이 기기에 기억하고 주소창에서 지운다
@@ -601,8 +614,8 @@ async function lookup(chip, keyword, ctx, query, target=null, from=""){
   else {
     $("empty")?.remove();
     c=document.createElement("div"); c.className="card ans";
-    c.innerHTML=`<div class="t"></div><p>찾는 중…</p>`; c.querySelector(".t").textContent=`${fmt(state.t)} ${keyword}`;
-    $("feed").append(c); $("feed").scrollTop=$("feed").scrollHeight;
+    c.innerHTML=`<div class="t"></div><p>찾는 중…</p>`; c.querySelector(".t").textContent=`${fmt(state.t)} AI 답`;
+    $("feed").append(c); if($("liveCard")) $("feed").append($("liveCard")); $("feed").scrollTop=$("feed").scrollHeight;
   }
   if(!sample){ c.querySelector("p").textContent="Claude를 쓸 수 없는 화면입니다"; return; }
   const p=c.querySelector("p"), t0=performance.now();
@@ -691,7 +704,7 @@ $("shClose").onclick=()=>{ $("sheet").hidden=true; };
 $("ask").onsubmit = async e => {
   e.preventDefault(); const text=$("q").value.trim(); if(!text) return; $("q").value="";
   $("empty")?.remove();
-  const me=document.createElement("div"); me.className="card me"; me.textContent=text; $("feed").append(me);
+  
   const ctx = state.lines.filter(l=>l.t<=state.t && l.t>=state.t-180).map(l=>`[${fmt(l.t)}] ${l.s}`).join("\n")
     || state.summaries.slice(-3).join("\n");
   let query=text;
@@ -1061,7 +1074,8 @@ startLive = async function(){
   let stream;
   try{ stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}}); }
   catch(e){ const m="마이크가 허용되지 않았습니다. 주소창 옆 자물쇠(또는 ⋮ → 설정 → 사이트 설정 → 마이크)에서 이 사이트의 마이크를 허용한 뒤 다시 '회의 시작'을 누르세요"; $("dictWarn").textContent=m; $("dictWarn").hidden=false; log(`마이크 안 됨: ${e.name}`,"no"); alert(m+" ("+e.name+")"); return; }
-  beginRun("마이크 → PC 받아쓰기"); state.micOn=true; nowSum=""; sumSeq=state.seq||0; sumN=0; liveCards=[]; $("nowSum").textContent="";
+  beginRun("마이크 → PC 받아쓰기"); state.micOn=true; nowSum=""; sumSeq=state.seq||0; sumN=0; liveCards=[]; $("nowSum").textContent=""; state.micWarn="";
+  try{ Object.assign(state.fixes, JSON.parse(localStorage.getItem("gist_fixes")||"{}")); }catch(_){} // 전에 고친 말을 이 회의 받아쓰기에도 쓴다
   let resumed=false;
   try{ const k=JSON.parse(localStorage.getItem("gist_live")||"null");
     if(k && Date.now()-k.at<30*60*1000 && confirm("30분 안에 끊긴 회의가 있습니다. 이어서 할까요?")){
@@ -1071,7 +1085,7 @@ startLive = async function(){
     } }catch(_){}
   if(!resumed) pcFetch("/new","{}").catch(()=>{}); // PC에 새 회의 파일을 연다(이어 가면 같은 파일에 계속 적는다)
   const ctx = new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
-  const src = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096,1,1);
+  const src = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096,1,1); micGuard(stream, ctx);
   let buf=[], n=0, startAt=0, queue=Promise.resolve(), sil=0;
   const CH = 10; // 초
   proc.onaudioprocess = e => {
@@ -1085,7 +1099,7 @@ startLive = async function(){
     if(Math.sqrt(ss/(all.length/8)) < 0.004) return; // 조용한 10초는 보내지 않는다
     const wav=wavOf(all, ctx.sampleRate);
     queue = queue.then(async()=>{
-      try{ const j=await pcFetch("/stt", wav, "audio/wav"); state.lastInput=Date.now(); const t=ghostCut(j.text||""); if(t){ addHeard(t, at); lcLine(t); liveSum(); saveLive(); } }
+      try{ const j=await pcFetch("/stt", wav, "audio/wav"); state.lastInput=Date.now(); const t=ghostCut(j.text||""); if(t){ addHeard(t, at); lcLine(state.lines.find(x=>x.a===state.seq)); liveSum(); saveLive(); } }
       catch(err){ log(`받아쓰기 실패: ${err.message||err.code}`,"no"); }
     });
   };
@@ -1133,8 +1147,41 @@ function lcEnsure(){ let c=$("liveCard"); if(c) return c; $("empty")?.remove();
 function lcReset(){ const c=$("liveCard"); if(!c) return; c.querySelector(".lclines").innerHTML=""; c.querySelector(".lcchips").innerHTML=""; }
 function chipsOf(s){ const re=/\d[\d,.]*\s*(?:조|억|천만|백만|만|천)?\s*(?:원|달러|%|퍼센트|개월|년|월|일|주|명|곳|평|개|건|층|시간)|\d[\d,.]*\s*(?:조|억|천만|백만|만)/g;
   return [...new Set((s.match(re)||[]).map(x=>x.replace(/\s+/g," ").trim()))].slice(0,4); }
-function lcLine(s){ const c=lcEnsure(), box=c.querySelector(".lclines"), d=document.createElement("div"); d.className="lcl"; box.append(d);
-  let i=0; const tick=()=>{ i+=2; d.textContent=s.slice(0,i); if(i<s.length) setTimeout(tick,28); else d.classList.add("done"); }; tick();
+// 받아쓴 말 바로 고치기: 낱말을 누르면 그 자리에서 고친다. 두 글자 이상이면 고친 말 사전에 넣어 이 회의 전체와 앞으로 오는 받아쓰기에 쓴다
+function saveFixes(){ try{ localStorage.setItem("gist_fixes", JSON.stringify(state.fixes)); }catch(_){} }
+function lcRender(d){ const L=d._L; d.replaceChildren();
+  for(const w of L.s.split(/(\s+)/)){ if(!w.trim()){ d.append(w); continue; }
+    const b=document.createElement("span"); b.className="w"; b.textContent=w; b.onclick=()=>wordEdit(b, d, w); d.append(b); }
+  if(L.raw && L.raw!==L.s){ const o=document.createElement("small"); o.className="raw"; o.textContent="받아쓰기: "+L.raw; d.append(o); } }
+function lcRefresh(){ document.querySelectorAll("#liveCard .lcl.done").forEach(lcRender); }
+function wordEdit(span, d, w){ if(span.querySelector("input")) return;
+  const core=w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,"") || w;
+  const inp=document.createElement("input"); inp.className="wi"; inp.value=core; inp.size=Math.max(2, core.length+2);
+  span.replaceChildren(inp); inp.focus(); inp.select();
+  let done=false; const commit=()=>{ if(done) return; done=true; const v=inp.value.trim();
+    if(v && v!==core){ const L=d._L;
+      if(core.length>=2){ applyFix(core, v); saveFixes(); }
+      else { L.raw ??= L.s; L.s=L.s.replace(core, v); log(`고친 말(이 줄만): ${core} → ${v}`,"ok"); } }
+    lcRefresh(); };
+  inp.onkeydown=e=>{ if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); commit(); } else if(e.key==="Escape"){ done=true; lcRefresh(); } };
+  inp.onblur=commit; }
+// 요약 카드 바로 고치기: 카드 글을 누르면 그 자리에서 고치고, Enter나 바깥을 누르면 저장한다
+document.addEventListener("click", e=>{ const p=e.target.closest("#feed .card:not(#liveCard) > p"); if(!p || e.target.closest("button") || p.isContentEditable) return;
+  const before=p.textContent; p.contentEditable="true"; p.classList.add("editing"); p.focus();
+  p.onkeydown=ev=>{ if(ev.key==="Enter" && !ev.isComposing){ ev.preventDefault(); p.blur(); } };
+  p.onblur=()=>{ p.contentEditable="false"; p.classList.remove("editing"); const after=p.textContent.trim(); if(!after || after===before) return;
+    state.summaries=state.summaries.map(x=>x===before ? after : x);
+    for(const x of liveCards) if(x.text.replace(/\[\[|\]\]/g,"")===before) x.text=after;
+    saveLive(); log("요약 카드를 고쳤습니다","ok"); }; });
+// 다른 앱(키보드 음성 입력 등)이 마이크를 가져가면 지금 쓰는 카드에 알리고, 소리 처리가 멈추면 다시 켠다
+function micGuard(stream, ctx){ const tr=stream.getAudioTracks()[0]; if(!tr) return;
+  tr.onmute=()=>{ state.micWarn="다른 앱(키보드 음성 입력 등)이 마이크를 쓰는 동안 듣기가 멈춥니다. 끝나면 이어집니다"; log("마이크 잠시 멈춤","no"); };
+  tr.onunmute=()=>{ state.micWarn=""; log("마이크 다시 들음","ok"); };
+  tr.onended=()=>{ state.micWarn="마이크가 끊겼습니다. '끝내기' 뒤 '회의 시작'을 다시 눌러 주세요"; log("마이크 끊김","no"); };
+  ctx.onstatechange=()=>{ if(ctx.state!=="running" && state.running){ state.micWarn="소리 처리가 멈춰 다시 켜는 중…"; ctx.resume().catch(()=>{}); } else if(ctx.state==="running" && /소리 처리/.test(state.micWarn||"")) state.micWarn=""; };
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && state.running && ctx.state!=="running") ctx.resume().catch(()=>{}); }); }
+function lcLine(L){ if(!L) return; const s=L.s, c=lcEnsure(), box=c.querySelector(".lclines"), d=document.createElement("div"); d.className="lcl"; d._L=L; box.append(d);
+  let i=0; const tick=()=>{ i+=2; d.textContent=s.slice(0,i); if(i<s.length) setTimeout(tick,28); else { d.classList.add("done"); lcRender(d); } }; tick();
   while(box.children.length>6) box.firstChild.remove();
   const cb=c.querySelector(".lcchips"); for(const k of chipsOf(s)) if(![...cb.children].some(x=>x.textContent===k)){ const b=document.createElement("span"); b.className="lab"; b.textContent=k; cb.append(b); }
   const f=$("feed"); f.scrollTop=f.scrollHeight; }
@@ -1143,7 +1190,8 @@ setInterval(()=>{ if(!state.running || !state.liveMode) return; const c=lcEnsure
   c.querySelector(".lcnow").textContent = nowSum ? "지금 이야기: "+nowSum : (c.querySelector(".lclines").children.length ? "지금 이야기를 정리하는 중…" : "듣고 있습니다…");
   const bar=c.querySelector(".lcbar i"), st=c.querySelector(".lcst"), late=state.busy || el>=60;
   c.classList.toggle("wait", late); bar.style.width = late ? "100%" : Math.min(100, el/60*100)+"%";
-  st.textContent = late ? "카드로 정리하는 중…" : `정리 중 · ${Math.max(1, Math.ceil(60-el))}초 뒤 카드로 정리`;
+  st.textContent = state.micWarn ? state.micWarn : late ? "카드로 정리하는 중…" : `정리 중 · ${Math.max(1, Math.ceil(60-el))}초 뒤 카드로 정리`;
+  st.classList.toggle("warn", !!state.micWarn);
 }, 250);
 let nowSum="", sumBusy=false, sumSeq=0, sumN=0, liveCards=[];
 function saveLive(){ try{ localStorage.setItem("gist_live", JSON.stringify({at:Date.now(), t0:state.t0, lines:state.lines.slice(-400), nowSum, cards:liveCards.slice(-120)})); }catch(_){} }
