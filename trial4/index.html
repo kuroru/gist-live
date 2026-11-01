@@ -908,8 +908,8 @@ function openCompiled(given, label){
   const body=$("vbody"); body.replaceChildren();
   const gnb=document.createElement("nav"); gnb.className="vgnb"; body.append(gnb);
   ps.forEach((x,i)=>{
-    const n=document.createElement("div"); n.className="ndoc"; n.innerHTML=x.html; n.style.borderBottom="6px solid #D5D8D0"; linkify(n);
-    if(i && !given){ n.contentEditable="true"; n.spellcheck=false; n.dataset.part=x.k;
+    const n=document.createElement("div"); n.className="ndoc"; n.innerHTML=x.html; n.style.borderBottom="6px solid #D5D8D0"; linkify(n); n.querySelectorAll("a[href^='http']").forEach(a=>{ a.target="_blank"; a.rel="noopener"; });
+    if(i && !given){ n.contentEditable="false"; n.spellcheck=false; n.dataset.part=x.k;
       n.addEventListener("input",()=>{ if(x.k==="회의록") state.minutes=n.innerHTML; else { const d=state.docs.find(d=>d.keyword===x.k); if(d) d.html=n.innerHTML; } }); }
     body.append(n);
     const b=document.createElement("button"); b.textContent=x.k; b.onclick=()=>body.scrollTo({top:i?n.offsetTop-gnb.offsetHeight:0,behavior:"smooth"}); gnb.append(b);
@@ -1169,7 +1169,6 @@ const _packBtn0=window.packBtn; window.packBtn=function(){ _packBtn0(); if($("pa
 <script>
 // 느끼는 실시간: 목소리 파형, 본문 맨 아래 '지금 쓰는 카드'(받아쓴 말이 타자 치듯 쌓이고, 숫자는 칩으로, 지금 이야기 한 줄, 1분 카드까지 진행 막대)
 // 라벨 창: 처음 보는 말이면 뜻 후보 1~3을 먼저 보여 주고 고르게 한다. 고른 뜻은 이 기기와 PC에 기억해 다음부터 바로 그 뜻으로 찾는다
-document.addEventListener("click", e=>{ const a=e.target.closest("#vbody a[href^='http']"); if(a){ e.preventDefault(); window.open(a.href,"_blank","noopener"); } }, true); // 결과 화면의 출처 링크는 늘 출처로
 let termDict={}; try{ termDict=JSON.parse(localStorage.getItem("gist_terms")||"{}"); }catch(_){}
 const _openSheet0 = window.openSheet;
 let sheetTimer=null; function sheetArm(){ clearTimeout(sheetTimer); sheetTimer=setTimeout(()=>{ $("sheet").hidden=true; }, 20000); }
