@@ -1453,5 +1453,79 @@ window.openSheet=function(b, keyword, ctx, query, brief){
 };
 })();
 </script>
+<style>
+#recs{min-height:32px}
+#recList{position:fixed;z-index:45;left:50%;transform:translateX(-50%);top:calc(52px + env(safe-area-inset-top,0px));width:min(92vw,420px);max-height:60vh;overflow-y:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+#recList .rh{display:flex;align-items:center;margin-bottom:6px}
+#recList .rh b{flex:1}
+#recList .ri{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
+#recList .ri span{flex:1;min-width:0}
+#recList .ri small{display:block;color:var(--sub);font-size:12px}
+#recList button{min-height:30px;padding:2px 10px;font-size:13px;border-radius:999px}
+#rec.taping::after{content:" 녹음 중";font-size:11px}
+@media (max-width:480px){#wipe{font-size:0!important;padding:3px 10px}#wipe::before{content:"↺";font-size:15px}}
+</style>
+<script>
+// ④ 마스터 11-02: 회의 시작을 누르면 회의 소리 전체를 이 휴대폰에 한 파일로 남긴다(PC로 보내는 받아쓰기 조각과 따로, 자르지 않음).
+//    녹음 조각은 5초마다 이 기기 저장소(IndexedDB)에 쌓아 화면이 꺼지거나 닫혀도 남고, 끝내기를 누르면 한 파일로 합쳐 휴대폰에 내려받는다.
+//    위 '녹음' 단추로 지난 녹음을 다시 받거나 지운다. 소리는 PC나 공개 저장소로 보내지 않는다
+(()=>{
+let dbp=null;
+function db(){ return dbp ||= new Promise((ok,no)=>{ const r=indexedDB.open("gist_audio",1);
+  r.onupgradeneeded=()=>{ const d=r.result; d.createObjectStore("meets",{keyPath:"id"}); d.createObjectStore("chunks",{autoIncrement:true}).createIndex("id","id"); };
+  r.onsuccess=()=>ok(r.result); r.onerror=()=>no(r.error); }); }
+async function tx(store, mode, fn){ const d=await db(); return new Promise((ok,no)=>{ const t=d.transaction(store,mode); const out=fn(t.objectStore(store)); t.oncomplete=()=>ok(out?.result ?? out); t.onerror=()=>no(t.error); }); }
+const putMeet=m=>tx("meets","readwrite",s=>s.put(m));
+const allMeets=()=>tx("meets","readonly",s=>s.getAll());
+const putChunk=(id,blob)=>tx("chunks","readwrite",s=>s.add({id,blob}));
+async function blobOf(m){ const d=await db(); return new Promise((ok,no)=>{ const parts=[]; const q=d.transaction("chunks").objectStore("chunks").index("id").openCursor(IDBKeyRange.only(m.id));
+  q.onsuccess=()=>{ const c=q.result; if(c){ parts.push(c.value.blob); c.continue(); } else ok(new Blob(parts,{type:m.type||"audio/webm"})); }; q.onerror=()=>no(q.error); }); }
+async function delMeet(m){ const d=await db(); await new Promise((ok,no)=>{ const t=d.transaction(["meets","chunks"],"readwrite");
+  t.objectStore("meets").delete(m.id); const q=t.objectStore("chunks").index("id").openCursor(IDBKeyRange.only(m.id));
+  q.onsuccess=()=>{ const c=q.result; if(c){ c.delete(); c.continue(); } }; t.oncomplete=ok; t.onerror=()=>no(t.error); }); }
+const ext=t=>/mp4|aac/.test(t)?"m4a":/ogg/.test(t)?"ogg":"webm";
+const nameOf=m=>{ const d=new Date(m.start), p=n=>String(n).padStart(2,"0"); return `GIST_회의녹음_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.${ext(m.type)}`; };
+async function saveFile(m){ const b=await blobOf(m); if(!b.size){ toast("녹음이 비어 있습니다"); return; }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=nameOf(m); document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 60000); }
+let rec=null, cur=null;
+function recStart(stream){
+  if(!window.MediaRecorder){ log("이 웹브라우저는 녹음 파일을 만들 수 없습니다(받아쓰기는 그대로)","wa"); return; }
+  const type=["audio/webm;codecs=opus","audio/mp4","audio/ogg;codecs=opus"].find(t=>MediaRecorder.isTypeSupported?.(t)) || "";
+  try{ rec=new MediaRecorder(stream, type?{mimeType:type,audioBitsPerSecond:32000}:{}); }catch(e){ log(`녹음 시작 못 함: ${e.name}`,"no"); rec=null; return; }
+  cur={id:"m"+Date.now(), start:Date.now(), type:rec.mimeType||type||"audio/webm", bytes:0, done:false};
+  const m=cur; putMeet(m).catch(()=>{});
+  rec.ondataavailable=e=>{ if(e.data && e.data.size){ m.bytes+=e.data.size; putChunk(m.id, e.data).then(()=>putMeet(m)).catch(err=>log(`녹음 조각 저장 실패: ${err?.name||err}`,"no")); } };
+  rec.onstop=()=>{ m.done=true; m.end=Date.now(); setTimeout(()=>putMeet(m).then(()=>saveFile(m)).then(()=>toast("회의 녹음을 휴대폰에 저장했습니다")).catch(()=>toast("녹음은 위 '녹음' 단추에서 받을 수 있습니다")), 400); };
+  rec.start(5000); $("rec").classList.add("taping"); log(`녹음 파일 시작(${m.type})`,"ok");
+}
+function recStop(){ if(rec && rec.state!=="inactive"){ try{ rec.stop(); }catch(_){} } rec=null; $("rec").classList.remove("taping"); }
+const _startLive=startLive;
+startLive=async function(){ await _startLive.apply(this, arguments); if(mic?.stream && !rec) recStart(mic.stream); };
+const _stop=stop;
+stop=function(why){ recStop(); return _stop.apply(this, arguments); };
+// 위 '녹음' 단추: 지난 녹음 목록(받기 · 지우기)
+const btn=document.createElement("button"); btn.id="recs"; btn.type="button"; btn.textContent="녹음"; btn.title="이 휴대폰에 남은 회의 녹음";
+$("pack").after(btn);
+btn.onclick=async()=>{
+  let box=$("recList"); if(box){ box.remove(); return; }
+  box=document.createElement("div"); box.id="recList";
+  const h=document.createElement("div"); h.className="rh"; const t=document.createElement("b"); t.textContent="이 휴대폰의 회의 녹음";
+  const x=document.createElement("button"); x.type="button"; x.textContent="닫기"; x.onclick=()=>box.remove(); h.append(t,x); box.append(h);
+  let list=[]; try{ list=(await allMeets()).sort((a,b)=>b.start-a.start); }catch(e){ const p=document.createElement("p"); p.textContent="녹음 저장소를 열 수 없습니다"; box.append(p); }
+  if(!list.length && box.children.length<2){ const p=document.createElement("p"); p.style.margin="6px 0"; p.textContent="아직 녹음이 없습니다. '회의 시작'을 누르면 녹음이 함께 남습니다"; box.append(p); }
+  for(const m of list){
+    const r=document.createElement("div"); r.className="ri"; const s=document.createElement("span");
+    const min=Math.max(1,Math.round(((m.end||Date.now())-m.start)/60000));
+    s.textContent=nameOf(m).replace(/^GIST_회의녹음_/,"").replace(/\.\w+$/,"");
+    const sm=document.createElement("small"); sm.textContent=`${min}분 · ${(m.bytes/1048576).toFixed(1)}MB${m.done?"":" · 끊긴 녹음"}`; s.append(sm);
+    const g=document.createElement("button"); g.type="button"; g.textContent="받기"; g.onclick=()=>saveFile(m);
+    const d=document.createElement("button"); d.type="button"; d.textContent="지우기"; d.onclick=async()=>{ if(!confirm("이 녹음을 휴대폰에서 지울까요?")) return; await delMeet(m); r.remove(); };
+    r.append(s,g,d); box.append(r);
+  }
+  document.body.append(box);
+};
+window.gistRec={recStart, recStop, allMeets, blobOf, delMeet};
+})();
+</script>
 </body>
 </html>
