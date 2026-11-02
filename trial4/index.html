@@ -1372,5 +1372,91 @@ $("vedit").onclick=()=>{ const on=$("viewer").classList.toggle("editing");
   $("vedit").textContent=on?"고치기 끝":"✎ 고치기"; if(!on){ $("fixbar")?.setAttribute("hidden",""); pcSaveMinutes(); } };
 packBtn();
 </script>
+<style>
+/* 마스터 11-02 의견: 글자를 조금 줄여 자리를 넓힌다 */
+body{font-size:14px}
+.card p{font-size:14.5px;line-height:1.55}
+:root{--lab-h:26px;--lab-fs:12px;--lab-px:9px}
+#live{font-size:12.5px}
+/* 마스터 11-02 답12 1안: 찾은 결과는 창 대신 위 '찾아본 말' 칸에 쌓는다 */
+#sheet{display:none!important}
+#picked{display:block;overflow-x:hidden;overflow-y:auto;max-height:32vh;padding:6px 12px}
+#picked[hidden]{display:none}
+#picked::before{content:"찾아본 말";display:block;margin:0 0 2px}
+#picked .irow{border-top:1px solid var(--line);padding:4px 0}
+#picked .irow:first-of-type{border-top:0}
+#picked .ihead{display:flex;align-items:center;gap:8px;width:100%;min-height:26px;padding:0;border:0;border-radius:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+#picked .ihead b{flex:none;font-size:13px}
+#picked .ihead .ione{flex:1;min-width:0;font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#picked .ihead .ist{flex:none;font-size:11px;color:var(--sub)}
+#picked .irow.done .ihead b::after{content:" ✓";color:var(--accent)}
+#picked .ibody{margin:3px 0 2px;font-size:13px;line-height:1.5;white-space:pre-line}
+#picked .irow:not(.open) .ibody{display:none}
+#picked .irow.open .ione{display:none}
+#picked .src a{display:block;font-size:12px}
+#picked .ibtn{font-size:12px}
+#picked .ibtn .shSt{margin-left:8px;color:var(--sub)}
+#picked .pick{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+#picked .pick button{font:inherit;font-size:12.5px;min-height:30px;padding:3px 10px;border:1px solid var(--accent);border-radius:10px;background:transparent;color:var(--ink)}
+#picked .pick input{flex-basis:100%;font:inherit;padding:5px 8px;border:1px solid var(--accent);border-radius:8px;background:var(--panel);color:var(--ink)}
+</style>
+<script>
+// ③ 마스터 11-02 답12 1안: 라벨 · 밑줄 말을 누르면 창 없이 위 '찾아본 말' 칸에 한 줄이 생기고, 찾은 요약 · 출처가 그 줄에 채워진다.
+//    뜻이 여럿이면 고르기 칸도 그 줄 안에 끼운다. 줄을 누르면 펼치고 접는다(펼친 줄은 하나)
+(()=>{
+const nav=$("picked");
+function row(k){
+  let r=[...nav.querySelectorAll(".irow")].find(x=>x.dataset.k===k); if(r) return r;
+  r=document.createElement("div"); r.className="irow"; r.dataset.k=k;
+  const h=document.createElement("button"); h.type="button"; h.className="ihead";
+  const b=document.createElement("b"); b.textContent=k;
+  const one=document.createElement("span"); one.className="ione";
+  const st=document.createElement("span"); st.className="ist";
+  h.append(b,one,st); h.onclick=()=>{ if(r.classList.contains("open")) r.classList.remove("open"); else focus(r); };
+  const body=document.createElement("div"); body.className="ibody";
+  r.append(h,body); nav.append(r); nav.hidden=false; return r;
+}
+function focus(r){ nav.querySelectorAll(".irow.open").forEach(x=>{ if(x!==r) x.classList.remove("open"); }); r.classList.add("open"); nav.hidden=false; r.scrollIntoView({block:"nearest",behavior:"smooth"}); }
+window.pickChip=c=>{ row(c.keyword); };
+window.pickDone=k=>{ row(k).classList.add("done"); };
+window.renderSheet=c=>{
+  const r=row(c.keyword); if(r.dataset.asking) return;
+  const text=c.lines ? c.lines.join("\n") : (c.brief||"찾는 중…");
+  r.querySelector(".ione").textContent=text.split("\n")[0];
+  r.querySelector(".ist").textContent=c.lines ? "" : "찾는 중";
+  const body=r.querySelector(".ibody"); body.replaceChildren();
+  const p=document.createElement("p"); p.style.margin="0"; p.textContent=text; body.append(p);
+  if(c.lines) body.append(sourceLinks(c.sources));
+  const line=document.createElement("div"); line.className="ibtn";
+  const more=document.createElement("a"); more.textContent="more"; more.title="검색 페이지를 새 창으로 엽니다";
+  more.href="https://search.naver.com/search.naver?query="+encodeURIComponent(c.query||c.keyword); more.target="_blank"; more.rel="noopener";
+  const s=document.createElement("span"); s.className="shSt"; s.textContent=c.lines ? (c.status||"") : "";
+  line.append(more,s); body.append(line);
+};
+window.openSheet=function(b, keyword, ctx, query, brief){
+  const c=labelCache[keyword], r=row(keyword); focus(r);
+  if(c?.started){ renderSheet(c); return; }
+  if(r.dataset.asking) return;
+  let ran=false; const run=(m)=>{ if(ran) return; ran=true; delete r.dataset.asking;
+    _openSheet0(b, keyword, m ? ctx+"\n(사용자 확인: "+keyword+" = "+m+")" : ctx, m ? keyword+" "+m : query, m||brief); };
+  if(termDict[keyword]) return run(termDict[keyword]);
+  r.dataset.asking="1"; r.querySelector(".ist").textContent="뜻 확인 중"; b?.classList.add("asking");
+  (async()=>{ let cands=[];
+    try{ const x=await gistSample.json(`회의 중 나온 '${keyword}'가 무엇을 가리킬 수 있는지, 회의 맥락에 맞는 뜻 후보를 가능성 높은 순서로 최대 3개 쓴다. 한 후보는 15자 안팎의 짧은 설명(예: "PNC 파이낸셜(미국 은행)"). 맥락에서 뜻이 분명하면 1개만.\n회의 맥락:\n${String(ctx||"").slice(-800)}\nJSON만: {"cands":["...","..."]}`,{modelTier:"quick"}); cands=(Array.isArray(x?.cands)?x.cands:[]).map(String).filter(Boolean).slice(0,3); }catch(_){}
+    b?.classList.remove("asking");
+    if(cands.length<2) return run(cands[0]||"");
+    const choose=(m)=>{ if(m){ termDict[keyword]=m; try{ localStorage.setItem("gist_terms", JSON.stringify(termDict)); }catch(_){} pcLog({kind:"term", k:keyword, meaning:m}); } run(m); };
+    const box=document.createElement("div"); box.className="pick";
+    cands.forEach((m,i)=>{ const x=document.createElement("button"); x.type="button"; x.textContent=`${i+1}. ${m}`; x.onclick=()=>choose(m); box.append(x); });
+    const own=document.createElement("button"); own.type="button"; own.textContent="직접 쓰기";
+    own.onclick=()=>{ const i=document.createElement("input"); i.placeholder=keyword+"의 뜻"; own.replaceWith(i); i.focus(); i.onkeydown=e=>{ if(e.key==="Enter" && !e.isComposing && i.value.trim()) choose(i.value.trim()); }; };
+    const any=document.createElement("button"); any.type="button"; any.textContent="찾기"; any.onclick=()=>choose("");
+    box.append(own, any);
+    r.querySelector(".ist").textContent="뜻 고르기"; r.querySelector(".ibody").replaceChildren(box); focus(r);
+    setTimeout(()=>run(cands[0]), 20000); // 고르지 않고 지나가면 가장 그럴듯한 뜻으로 찾아 둔다
+  })();
+};
+})();
+</script>
 </body>
 </html>

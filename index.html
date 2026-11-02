@@ -188,6 +188,104 @@ textarea{width:100%;min-height:110px;font-size:14px;font-family:var(--f-mono)}
 .ok{color:var(--accent)} .no{color:var(--bad)} .wa{color:var(--warn)}
 
 body{margin:0}
+#lvl{display:flex;align-items:center;gap:3px;height:22px;margin-bottom:6px}
+#lvl i{display:block;width:4px;height:100%;border-radius:2px;background:var(--accent);transform:scaleY(.12);transform-origin:center;transition:transform .12s ease}
+#liveCard{border-color:var(--accent);background:var(--accent-soft)}
+#liveCard .t{display:flex;align-items:center;gap:6px;font-weight:600}
+#liveCard .dot{width:8px;height:8px;border-radius:50%;background:var(--bad);animation:blink 1s ease-in-out infinite}
+#liveCard .lcnow{font-weight:600;margin:6px 0 4px;line-height:1.5}
+#liveCard .lcl{color:var(--ink);opacity:.9;line-height:1.55;animation:lcin .35s ease both}
+#liveCard .lcl:not(.done)::after{content:"▍";animation:blink .8s steps(1) infinite}
+#liveCard .lcchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+#liveCard .lcbar{height:4px;border-radius:2px;background:var(--line);margin-top:8px;overflow:hidden}
+#liveCard .lcbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
+#liveCard.wait .lcbar i{animation:shim 1.2s ease-in-out infinite}
+#liveCard .lcst{font-size:12px;color:var(--sub);margin-top:4px}
+#liveCard .lcst.warn{color:var(--bad);font-weight:600}
+#liveCard .lab.tm{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+#liveCard .w{cursor:pointer;border-bottom:1px dotted var(--sub)}
+#liveCard .wi{font:inherit;width:auto;padding:0 3px;border:1px solid var(--accent);border-radius:4px;background:var(--panel);color:var(--ink)}
+#liveCard .raw{display:block;font-size:11px;color:var(--sub)}
+#feed .card:not(#liveCard) > p{cursor:text}
+#feed .card p.editing{outline:2px solid var(--accent);border-radius:6px;padding:2px 4px}
+/* 라벨 규칙(GIST 시험판, 2026-11-01): 어느 자리든 같은 크기 · 모양, 색만 역할을 나타낸다
+   이름(.tm) = 채움 · 회의에 나온 말(.lab) = 테두리 · 연관 추천(.rel) = 점선 · 고른 라벨(#picked) = 테두리 */
+:root{--lab-h:28px;--lab-fs:13px;--lab-px:10px;--lab-gap:6px}
+body .lab, body .picked button{min-height:var(--lab-h);padding:2px var(--lab-px);font-size:var(--lab-fs);font-weight:600;border-radius:999px;line-height:1.2}
+body .lab{background:transparent;border:1px solid var(--accent);color:var(--ink)}
+body .lab.rel{border-style:dashed}
+#sug .lab.rel::before{font-size:10px;margin-right:4px}
+#sug::before,#picked::before{flex-basis:100%;font-size:11px;color:var(--sub);font-weight:600}
+#sug::before{content:"AI 추천 연관 주제"}
+#picked::before{content:"내가 고른 라벨";flex:none;align-self:center;margin-right:4px}
+/* 라벨 창: 작게, 바깥을 누르면 닫힘, 20초 동안 안 만지면 닫힘 */
+#sheet{max-height:36vh;padding:10px 12px;font-size:14px;line-height:1.5}
+#sheet .pick{display:flex;flex-direction:column;gap:6px;margin:6px 0}
+#sheet .pick button{text-align:left;min-height:36px;padding:6px 10px;border:1px solid var(--accent);border-radius:10px;background:transparent;color:var(--ink);font:inherit}
+#sheet .pick input{font:inherit;padding:6px 8px;border:1px solid var(--accent);border-radius:8px;background:var(--panel);color:var(--ink)}
+#sheet .shSt{font-size:12px;color:var(--sub)}
+#viewer .vbar{padding:4px 12px;gap:6px}
+#viewer .vbar span{font-size:14px}
+#viewer .vbar button{min-height:30px;padding:2px 10px;font-size:13px}
+#vbody .gnb{padding:6px 12px;gap:6px}
+#vbody .gnb a,#vbody .gnb button{padding:2px 10px;font-size:12px}
+#sug .topic{font-size:11px;padding-top:2px;margin-top:0}
+@media (max-width:1179px){#sug{max-height:13vh;min-height:0;gap:6px;padding:6px 16px}}
+@keyframes blink{50%{opacity:.25}}
+@keyframes lcin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes shim{0%{opacity:.35}50%{opacity:1}100%{opacity:.35}}
+/* 마스터 22:13 UI 의견(2026-11-01) */
+.top{align-items:center}
+.top .ctl{display:flex;align-items:center;gap:8px;margin-left:auto}
+.top .wipe{margin-left:0}
+.top button{min-height:32px!important;padding:3px 12px;font-size:13px;border-radius:999px;line-height:1.2}
+.top .clock{font-size:13px}
+.top #pcNote:not([hidden]){display:block}
+@media (max-width:480px){.top h1{display:none}.top .ctl{margin-left:0}.top .wipe{margin-left:auto}}
+button.main{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.main.end{background:var(--bad);border-color:var(--bad);color:#fff}
+#pack.busy{animation:blink 1s ease-in-out infinite}
+#qgo{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.ask{padding:6px 10px;gap:6px}
+.ask input{font-size:15px;padding:5px 9px;border-radius:8px}
+.ask button{min-height:34px!important;padding:3px 12px;font-size:14px}
+.live{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:4px 12px calc(4px + env(safe-area-inset-bottom,0px));border-bottom:0;border-top:1px solid var(--line)}
+#lvl{height:16px;margin:0;flex:none}
+#lvl i{width:3px}
+#live{flex:1;min-width:0;height:auto;max-height:3em;font-size:13px}
+#dictWarn,#dict{flex-basis:100%}
+@container (min-width:640px){
+  .phone{grid-template-rows:auto minmax(0,1fr) auto}
+  .picked{grid-row:1}
+  .feed,.side{grid-row:2}
+  .live{grid-column:1/-1;grid-row:3}
+  #live{font-size:14px}
+  .side #ask{margin-top:auto}
+}
+#sheet{position:static;width:auto;max-height:30vh;border:0;border-bottom:1px solid var(--line);border-radius:0;flex:none}
+#sheet .shHead{margin-bottom:2px}
+#sheet .shHead b{font-size:15px}
+#shClose{min-height:28px!important;padding:0 10px;font-size:13px}
+#sheet .pick{flex-direction:row;flex-wrap:wrap}
+#sheet .pick button{min-height:32px!important;padding:4px 10px;font-size:13px}
+#sheet .pick input{flex-basis:100%}
+.lab.asking{animation:blink 1s ease-in-out infinite}
+.toast{bottom:auto;top:calc(52px + env(safe-area-inset-top,0px));padding:6px 12px;font-size:13px}
+/* ⑦ 라벨은 회색으로 흐리지 않고 전부 그대로 */
+#sug .lab,#sug .topic{opacity:1!important}
+/* 결과 화면: 회의록 먼저, 찾아본 자료는 뒤에 한 줄 카드로 접음 */
+#vbody .folds{max-width:794px;margin:0 auto 10px;padding:6px 12px 10px;background:#FBFBF8;scroll-margin-top:52px}
+#vbody .foldsH{font-size:13px;font-weight:700;color:#333;margin:6px 2px}
+#vbody details.fold{border:1px solid #D5D8D0;border-radius:10px;margin:6px 0;background:#fff;overflow:hidden}
+#vbody details.fold>summary{display:flex;gap:8px;align-items:baseline;padding:9px 12px;cursor:pointer;list-style:none}
+#vbody details.fold>summary::-webkit-details-marker{display:none}
+#vbody details.fold>summary b{flex:none;color:#222}
+#vbody details.fold>summary span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:#333}
+#vbody details.fold>summary::after{content:"펼치기";flex:none;font-size:12px;color:var(--accent)}
+#vbody details.fold[open]>summary::after{content:"접기"}
+#vbody details.fold>.ndoc{border-bottom:0!important;margin:0}
+#viewer.editing #vedit{background:var(--accent);border-color:var(--accent);color:#fff}
+#viewer.editing .ndoc.ved{box-shadow:inset 0 0 0 2px var(--accent)}
 </style>
 </head>
 <body>
@@ -195,6 +293,7 @@ body{margin:0}
 
 <div class="top">
   <h1>GIST 실시간 시험판</h1>
+  <span class="ctl"><span class="rec" id="rec"></span><span class="clock" id="clock">00:00</span><button class="main" id="go">회의 시작</button><button id="pack" type="button" disabled title="회의가 끝나면 회의록 · 자료를 엽니다">회의록</button></span>
   <button id="wipe" type="button" class="wipe" title="이 기기의 화면과 지난 회의 기록을 지웁니다(PC 연결은 그대로)">↺ 초기화</button>
   <p>회의를 들으며 1분마다 요약하고, 찾아볼 말을 라벨로 띄웁니다. 끝내면 회의록과 자료를 한 파일로 줍니다.</p>
   <p id="pcNote" hidden style="flex-basis:100%;margin:0;padding:10px 12px;border:1px solid var(--bad);border-radius:10px;color:var(--ink)">PC와 연결되지 않았습니다. PC에서 'GIST_PC받아쓰기_켜기'를 실행하고, 나오는 연결 링크로 이 화면을 여세요.</p>
@@ -202,20 +301,16 @@ body{margin:0}
 
 <div class="wrap">
   <div class="stage"><section class="phone" aria-label="사용자 화면">
-    <div class="live"><div id="live">들리는 말이 여기 두 줄로 지나갑니다</div>
-      <textarea id="dict" hidden rows="2" placeholder="여기를 누르고 키보드의 마이크를 켜 두세요. 들리는 말이 받아써집니다" aria-label="실시간 받아쓰기"></textarea>
-      <div id="dictWarn" hidden>받아쓰기가 멈췄습니다. 키보드 마이크를 다시 눌러 주세요</div></div>
     <nav class="picked" id="picked" hidden aria-label="찾아본 말"></nav>
     <div class="feed" id="feed"><p class="empty" id="empty">'회의 시작'을 누르고 마이크를 허용하세요. 휴대폰 · 태블릿은 탁자 가운데 두면 잘 들립니다.<br>회의를 시작하면 1분마다 요약 카드가 쌓입니다.<br>찾아볼 만한 말은 라벨로 톡톡 나타납니다. 누르면 찾아 드립니다.</p></div>
     <div class="side">
+      <div id="sheet" hidden role="dialog" aria-label="라벨 요약"><div class="shHead"><b id="shTitle"></b><button id="shClose" aria-label="닫기">✕</button></div><div id="shBody"></div></div>
       <div class="sug" id="sug" aria-live="polite"></div>
       <form class="ask" id="ask" autocomplete="off"><input id="q" placeholder="AI에게 물어보기" aria-label="AI에게 물어보기"><button id="qgo">보내기</button></form>
     </div>
-    <div class="bar">
-      <span class="left"><span class="rec" id="rec"></span><span class="clock" id="clock">00:00</span></span>
-      <button class="main" id="go">회의 시작</button>
-      <span class="right"><button id="pack" hidden>회의 자료</button></span>
-    </div>
+    <div class="live"><div id="lvl" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div id="nowSum" hidden></div><div id="live">들리는 말이 여기 두 줄로 지나갑니다</div>
+      <textarea id="dict" hidden rows="2" placeholder="여기를 누르고 키보드의 마이크를 켜 두세요. 들리는 말이 받아써집니다" aria-label="실시간 받아쓰기"></textarea>
+      <div id="dictWarn" hidden>받아쓰기가 멈췄습니다. 키보드 마이크를 다시 눌러 주세요</div></div>
   </section></div>
 
   <details class="sys" id="sys" open>
@@ -263,9 +358,9 @@ body{margin:0}
   </details>
 </div>
 
-<div id="sheet" hidden role="dialog" aria-label="라벨 요약"><div class="shHead"><b id="shTitle"></b><button id="shClose" aria-label="닫기">닫기</button></div><div id="shBody"></div></div>
+
 <div id="doc" class="ndoc" aria-hidden="true"></div>
-<div id="viewer" hidden><div class="vbar"><span id="vtitle"></span><button id="vhtml">HTML 받기</button><button id="vsave">PDF 변환</button><button id="vclose">닫기</button></div><div class="vbody" id="vbody"></div></div>
+<div id="viewer" hidden><div class="vbar"><span id="vtitle"></span><button id="vedit" type="button">✎ 고치기</button><button id="vhtml">HTML 받기</button><button id="vsave">PDF 변환</button><button id="vclose">닫기</button></div><div class="vbody" id="vbody"></div></div>
 <script>
 // GIST 웹앱 어댑터: 아티팩트의 claude.use("sample" · "downloads") 자리를 마스터 PC 중계 · 일반 내려받기로 바꾼다
 (function(){ // 카카오톡 안 브라우저면 휴대폰 웹브라우저로 넘긴다(창을 닫아도 다시 열 수 있고, 지난 회의가 남게)
@@ -407,7 +502,7 @@ async function start(){
 }
 function stop(why){
   if(state.liveMode){ commitDict(true); $("dict").hidden=true; $("dictWarn").hidden=true; state.liveMode=false; if(why==="마침") cut(true); }
-  clearInterval(state.timer); state.running=false; $("rec").classList.remove("on"); $("go").textContent="회의 시작"; $("go").classList.remove("end");
+  clearInterval(state.timer); state.running=false; $("liveCard")?.remove(); lvlPush(0, true); try{ localStorage.removeItem("gist_live"); }catch(_){} $("rec").classList.remove("on"); $("go").textContent="회의 시작"; $("go").classList.remove("end");
   if(why==="끝") cut(true);
   log(why==="끝" ? "회의 끝(녹음 끝)" : "회의 마침");
   makeMinutes().then(()=>{ $("pack").classList.add("ready"); packBtn(); saveHist(); log("회의록 · 자료는 아래 '회의록 · 자료' 단추로 봅니다(이 기기에 10건까지 보관)"); });
@@ -480,10 +575,10 @@ ${seg}
 앞 주제: ${state.topic || "없음"}
 고친 말(받아쓰기 오류 → 바른 말, 요약 · 라벨에 바른 말을 쓴다): ${Object.entries(state.fixes).map(([a,b])=>a+"→"+b).join(", ") || "없음"}
 
-1) summary: 이번 구간 요약, 한국어 150자 이내, 정한 것과 미룬 것을 구분.
+1) summary: 이번 구간 요약, 한국어 150자 이내, 정한 것과 미룬 것을 구분. 제안 · 의견("~하죠", "~할까요", "~면 좋겠다")은 결정으로 쓰지 않고 "제안", "논의"로 쓴다. 분명히 정했다는 말이 있을 때만 "결정"이라고 쓴다.
 2) importance: 0 보통, 1 중요(돈 · 기한 · 조건 · 위험이 나옴), 2 핵심(결정이 났거나 결정을 뒤집을 말).
 3) topic: 지금 이야기하는 주제, 10자 안팎 명사. 앞 주제와 같으면 그대로 쓴다.
-4) labels: 참석자가 회의를 멈추고 따로 찾아볼 법한 것(모르는 용어, 회사, 제도, 시세 · 수치, 규정)을 0~4개. 질문 꼴이 아니라 2~10자 명사 라벨로. 이미 낸 것은 빼라.
+4) labels: 참석자가 회의를 멈추고 따로 찾아볼 법한 것(모르는 용어, 회사, 제도, 시세 · 수치, 규정)을 0~4개. 질문 꼴이 아니라 2~10자 명사 라벨로. 이미 낸 것은 빼라. 회사 · 기관 · 지명 · 사업 · 제품 이름과 전문 용어는 시험 삼아 한 말처럼 보여도, 받아쓰기가 조금 이상해도 이름으로 보이면 빠짐없이 낸다. 0개는 그런 말이 전혀 없을 때만.
    각 항목 {"label":"...", "brief": 회의 맥락에 맞춘 쉬운 설명 1~2문장(숫자 · 기준이 있으면 넣고, 불확실하면 '(확인 필요)'), "query": 웹에서 찾을 한국어 검색어(맥락 낱말 포함)}
 5) related: 대화에 직접 나오지 않았지만 지금 판단에 중요한 연관 정보 0~2개(관련 제도 · 규정, 경쟁사 · 대안, 시세 · 기준값, 놓치기 쉬운 위험). 억지로 채우지 않는다. 각 항목 모양은 labels와 같다.
 summary 안에 labels의 말이 나오면 그 자리를 [[말]]로 감싼다(라벨 글자 그대로).
@@ -498,12 +593,12 @@ JSON만 답한다: {"summary":"...","importance":0,"topic":"...","labels":[{"lab
       state.asked.add(k); labs.push({k, query:String(x.query||k), brief:String(x.brief||"")});
     }
     let inl=new Set();
-    if(r && typeof r.summary==="string"){ state.summaries.push(r.summary.replace(/\[\[|\]\]/g,"")); inl=addCard(from, r.summary, imp, labs, seg); }
+    if(r && typeof r.summary==="string"){ state.summaries.push(r.summary.replace(/\[\[|\]\]/g,"")); inl=addCard(from, r.summary, imp, labs, seg); if(state.liveMode){ liveCards.push({t:from, text:r.summary, imp}); saveLive(); pcLog({kind:"card", t:from, text:r.summary, imp, labels:labs.map(x=>x.k)}); } }
     const topic=String(r?.topic||"").trim();
     if(topic && state.topic && topic!==state.topic) topicShift(topic);
     if(topic) state.topic=topic;
     let n=0;
-    for(const x of labs){ if(inl.has(x.k)) continue; addSug(x.k, seg, x.query, n++, x.brief); }
+    for(const x of labs){ if(inl.has(x.k)) continue; lcTerm(x.k, true); }
     for(const x of (Array.isArray(r?.related)?r.related:[]).slice(0,2)){
       const k=String(x.label||"").trim(); if(!k || state.asked.has(k)) continue; state.asked.add(k);
       addSug(k, seg, String(x.query||k), n++, String(x.brief||""), true);
@@ -532,7 +627,7 @@ function addCard(t, text, imp=0, labs=[], ctx=""){
     b.onclick=()=>openSheet(b, k, ctx, x.query, x.brief);
     p.append(b); used.add(k); state.stats.sug++;
   }
-  feed.append(c); feed.scrollTop=feed.scrollHeight; state.stats.cards++;
+  feed.append(c); if($("liveCard")){ feed.append($("liveCard")); lcReset(); } feed.scrollTop=feed.scrollHeight; state.stats.cards++;
   return used;
 }
 function sugAtBottom(){ const g=$("sug"); return g.scrollTop+g.clientHeight >= g.scrollHeight-24; }
@@ -591,8 +686,8 @@ async function lookup(chip, keyword, ctx, query, target=null, from=""){
   else {
     $("empty")?.remove();
     c=document.createElement("div"); c.className="card ans";
-    c.innerHTML=`<div class="t"></div><p>찾는 중…</p>`; c.querySelector(".t").textContent=`${fmt(state.t)} ${keyword}`;
-    $("feed").append(c); $("feed").scrollTop=$("feed").scrollHeight;
+    c.innerHTML=`<div class="t"></div><p>찾는 중…</p>`; c.querySelector(".t").textContent=`${fmt(state.t)} AI 답`;
+    $("feed").append(c); if($("liveCard")) $("feed").append($("liveCard")); $("feed").scrollTop=$("feed").scrollHeight;
   }
   if(!sample){ c.querySelector("p").textContent="Claude를 쓸 수 없는 화면입니다"; return; }
   const p=c.querySelector("p"), t0=performance.now();
@@ -679,9 +774,9 @@ $("shClose").onclick=()=>{ $("sheet").hidden=true; };
 
 // 직접 질문: 검색어를 먼저 뽑고, 같은 짧은 답 · 출처 · 자료 만들기 흐름으로
 $("ask").onsubmit = async e => {
-  e.preventDefault(); const text=$("q").value.trim(); if(!text) return; $("q").value="";
+  e.preventDefault(); const text=$("q").value.trim(); if(!text) return; $("q").value=""; pcLog({kind:"ask", text});
   $("empty")?.remove();
-  const me=document.createElement("div"); me.className="card me"; me.textContent=text; $("feed").append(me);
+  
   const ctx = state.lines.filter(l=>l.t<=state.t && l.t>=state.t-180).map(l=>`[${fmt(l.t)}] ${l.s}`).join("\n")
     || state.summaries.slice(-3).join("\n");
   let query=text;
@@ -775,9 +870,8 @@ async function addToPdf(pdf, node, first){
   }
   pdf.setPage(pdf.getNumberOfPages());
 }
-function packBtn(){ const b=$("pack"), n=(state.docs||[]).length, m=state.pending||0;
-  b.hidden=!(n||m||state.minutes||state.minutesBusy);
-  b.textContent = state.minutesBusy ? "회의록 쓰는 중…" : m ? `자료 ${n} · 만드는 중 ${m}` : `회의록 · 자료 ${n}`; }
+function packBtn(){ const b=$("pack"), m=state.pending||0, busy=!!(state.minutesBusy || (m && !state.running));
+  b.hidden=false; b.textContent="회의록"; b.disabled = !!state.running || busy || !b.classList.contains("ready"); b.classList.toggle("busy", busy); }
 // F06 최종 회의록: 1분 요약 · 주제 · 찾아본 말 · (짧으면) 받아쓴 원문으로 쓴다. 화자 구분을 켜면 말 · 맥락으로 화자를 나눈다(데이터지문)
 async function makeMinutes(){
   if(!sample || !state.summaries.length){ state.minutes=null; return; }
@@ -785,10 +879,10 @@ async function makeMinutes(){
   const spk=$("spk").checked;
   const said=state.lines.filter(l=>l.t<=state.t).map(l=>`[${fmt(l.t)}] ${l.s}`).join("\n");
   const raw = said.length<=40000 ? said : "";
-  const q=`대면 회의의 최종 회의록을 쓴다. 한국어, 개조식 짧은 문장, 받아쓰기에 없는 내용은 만들지 않는다.
+  const q=`대면 회의의 최종 회의록을 쓴다. 한국어, 개조식 짧은 문장, 받아쓰기에 없는 내용은 만들지 않는다. 먼저 이 회의의 메인 주제를 하나 정하고, 메인 주제와 관련된 논의만 flow · decisions · actions · open에 쓴다. 메인 주제와 관련 없는 사담 · 인사 · 시험 삼아 한 말은 other에 한 줄로만 묶는다. 업무 안건이 전혀 없으면 title을 "업무 안건 없음(사담)"으로 하고 flow는 비운다. 제안 · 의견은 결정으로 쓰지 않는다.
 ${spk ? "화자 구분: 받아쓰기에는 화자 표시가 없다. 말투, 호칭, 역할, 앞뒤 맥락으로 화자를 화자 A, 화자 B…로 나누고 각 화자의 역할을 짐작해 적는다. 결정과 할 일에는 말한 화자를 붙인다. 짐작이므로 확신이 낮으면 (추정)을 붙인다." : "화자는 나누지 않는다."}
 JSON만 답한다:
-{"title":"회의 제목","summary":["세 줄 요약 1","2","3"],
+{"title":"회의 제목","main_topic":"메인 주제","summary":["세 줄 요약 1","2","3"],"other":"메인 주제와 관련 없는 이야기 한 줄(없으면 빈 값)",
  "flow":[{"topic":"주제","points":["논의 내용","..."]}],
  "decisions":["정한 것"],
  "actions":[{"what":"할 일","who":"담당(모르면 빈 값)","when":"기한(모르면 빈 값)"}],
@@ -810,14 +904,16 @@ ${raw ? "\n받아쓴 원문:\n"+raw : "\n(원문이 길어 1분 요약만 보냄
     let html=`<div class="mast"><span class="wm">GIST</span><span class="kind">회의록</span></div>
 <div class="hero"><p class="eyebrow">회의록</p><h1>${e(r.title||"회의록")}</h1><div class="lead">${(Array.isArray(r.summary)?r.summary:[]).map(x=>`<div>${e(x)}</div>`).join("")}</div>
 <div class="facts"><span>만든 날 <b>${ds}</b></span><span>회의 길이 <b>${fmt(state.t)}</b></span><span>찾아본 자료 <b>${state.docs.length}건</b></span>${spk?`<span>화자 <b>${sp.length}명(추정)</b></span>`:""}</div></div><div class="content">`;
-    html+=sec("논의 흐름", `<div class="body">${(Array.isArray(r.flow)?r.flow:[]).map(f=>`<p style="margin:10px 0 2px;font-weight:700">${e(f.topic)}</p><ul>${li(f.points)}</ul>`).join("")}</div>`);
-    if(r.decisions?.length) html+=sec("결정 사항", `<div class="body"><ul>${li(r.decisions)}</ul></div>`);
-    if(r.actions?.length) html+=sec("할 일", `<div class="body"><ul>${r.actions.map(x=>`<li>${e(x.what)}${x.who?` · <b>${e(x.who)}</b>`:""}${x.when?` · ${e(x.when)}`:""}</li>`).join("")}</ul></div>`);
-    if(r.open?.length) html+=sec("정하지 못한 것 · 확인할 것", `<div class="note"><ul>${li(r.open)}</ul></div>`);
+    const none='<div class="body"><p style="margin:4px 0;color:#4A4E46">없음</p></div>';
+    html+=sec("결정 사항", r.decisions?.length ? `<div class="body"><ul>${li(r.decisions)}</ul></div>` : none);
+    html+=sec("할 일", r.actions?.length ? `<div class="body"><ul>${r.actions.map(x=>`<li>${e(x.what)}${x.who?` · <b>${e(x.who)}</b>`:""}${x.when?` · ${e(x.when)}`:""}</li>`).join("")}</ul></div>` : none);
+    html+=sec("정하지 못한 것 · 확인할 것", r.open?.length ? `<div class="note"><ul>${li(r.open)}</ul></div>` : none);
+    if((Array.isArray(r.flow)?r.flow:[]).length) html+=sec("논의 흐름" + (r.main_topic ? " · " + r.main_topic : ""), `<div class="body">${r.flow.map(f=>`<p style="margin:10px 0 2px;font-weight:700">${e(f.topic)}</p><ul>${li(f.points)}</ul>`).join("")}</div>`);
+    if(r.other) html+=sec("그 밖의 이야기", `<div class="body"><p style="margin:4px 0">${e(r.other)}</p></div>`);
     if(state.docs.length) html+=sec("찾아본 자료", `<div class="body"><ul>${state.docs.map(x=>`<li>${e(x.keyword)} · ${e(x.title)}</li>`).join("")}</ul></div>`);
     if(spk && sp.length) html+=sec("화자(말 · 맥락으로 추정)", `<div class="body"><ul>${sp.map(x=>`<li><b>${e(x.id)}</b> · ${e(x.role)}</li>`).join("")}</ul><p style="font-size:13px;color:#4A4E46;margin-top:8px">목소리가 아니라 말과 맥락으로 나눈 결과입니다. 이름은 사람이 확인해 바꿉니다.</p></div>`);
     html+=`</div><div class="colophon">GIST가 1분 요약과 받아쓴 원문으로 쓴 회의록입니다. 받아쓰기 오류가 그대로 들어갈 수 있습니다.</div>`;
-    state.minutes=html; log(`회의록 ${((performance.now()-t0)/1000).toFixed(1)}초${spk?" · 화자 "+sp.length:""}`,"ok");
+    state.minutes=html; pcLog({kind:"minutes", r, dur:fmt(state.t), docs:state.docs.map(x=>({k:x.keyword, title:x.title, brief:(labelCache[x.keyword]?.lines||[]).join(" "), src:[...new Set([...String(x.html).matchAll(/data-url="([^"]+)"/g)].map(m=>m[1]))].slice(0,3)}))}); log(`회의록 ${((performance.now()-t0)/1000).toFixed(1)}초${spk?" · 화자 "+sp.length:""}`,"ok");
   }catch(e){ log(`회의록 실패: ${e.code||e.message}`,"no"); state.minutes=null; }
   finally{ state.minutesBusy=false; packBtn(); }
 }
@@ -860,8 +956,8 @@ function openCompiled(given, label){
   const body=$("vbody"); body.replaceChildren();
   const gnb=document.createElement("nav"); gnb.className="vgnb"; body.append(gnb);
   ps.forEach((x,i)=>{
-    const n=document.createElement("div"); n.className="ndoc"; n.innerHTML=x.html; n.style.borderBottom="6px solid #D5D8D0"; linkify(n);
-    if(i && !given){ n.contentEditable="true"; n.spellcheck=false; n.dataset.part=x.k;
+    const n=document.createElement("div"); n.className="ndoc"; n.innerHTML=x.html; n.style.borderBottom="6px solid #D5D8D0"; linkify(n); n.querySelectorAll("a[href^='http']").forEach(a=>{ a.target="_blank"; a.rel="noopener"; });
+    if(i && !given){ n.contentEditable="false"; n.spellcheck=false; n.dataset.part=x.k;
       n.addEventListener("input",()=>{ if(x.k==="회의록") state.minutes=n.innerHTML; else { const d=state.docs.find(d=>d.keyword===x.k); if(d) d.html=n.innerHTML; } }); }
     body.append(n);
     const b=document.createElement("button"); b.textContent=x.k; b.onclick=()=>body.scrollTo({top:i?n.offsetTop-gnb.offsetHeight:0,behavior:"smooth"}); gnb.append(b);
@@ -898,13 +994,13 @@ section.ndoc[contenteditable]{outline:none}
 #fx span{font-size:12px;color:#4A4E46}#fx input{width:120px;font-size:16px;padding:4px 8px}
 @media (max-width:820px){.ndoc .body,.ndoc .note,.ndoc .src{margin-left:0}.ndoc .head{grid-template-columns:1fr;gap:4px}.ndoc section,.ndoc .hero,.ndoc .mast,.ndoc .colophon{padding-left:20px;padding-right:20px}}
 </style></head><body>
-<nav class="gnb">${chips}<span style="flex:1"></span><button id="save" title="고친 내용으로 이 파일을 다시 저장">고친 파일 저장</button></nav>
+<nav class="gnb">${chips}<span style="flex:1"></span><button id="edit">✎ 고치기</button><button id="save" title="고친 내용으로 이 파일을 다시 저장">고친 파일 저장</button></nav>
 ${secs}
 <div id="fx" hidden><span id="fo"></span><input id="fn"><button id="fg">모두 바꾸기</button></div>
 <script>
-document.querySelectorAll('section.ndoc').forEach((s,i)=>{ if(i) s.contentEditable='true'; });
+document.addEventListener('click',e=>{ const a=e.target.closest('a[href^="http"]'); if(a && !document.body.classList.contains('editing')){ e.preventDefault(); window.open(a.href,'_blank','noopener'); } },true); document.getElementById('edit').onclick=()=>{ const on=document.body.classList.toggle('editing'); document.querySelectorAll('section.ndoc').forEach((s,i)=>{ if(i) s.contentEditable=on?'true':'false'; }); document.getElementById('edit').textContent=on?'고치기 끝':'✎ 고치기'; };
 let sel='';
-document.addEventListener('selectionchange',()=>{ const fx=document.getElementById('fx'); if(fx.contains(document.activeElement)) return;
+document.addEventListener('selectionchange',()=>{ const fx=document.getElementById('fx'); if(fx.contains(document.activeElement)) return; if(!document.body.classList.contains('editing')){ fx.hidden=true; return; }
   const g=getSelection(), t=(g+'').trim(); if(!t||t.length>30||t.includes('\\n')){ fx.hidden=true; return; }
   sel=t; const n=document.body.innerText.split(t).length-1; document.getElementById('fo').textContent="'"+t+"' "+n+"곳"; document.getElementById('fn').value=t;
   const r=g.getRangeAt(0).getBoundingClientRect(); fx.style.left=Math.max(8,r.left)+'px'; fx.style.top=Math.max(56,r.top-48)+'px'; fx.hidden=false; });
@@ -978,7 +1074,7 @@ let fxSel="";
 document.addEventListener("selectionchange",()=>{
   if(fixBar.contains(document.activeElement)) return;
   const sel=getSelection(); const t=sel?.toString().trim()||"";
-  const inside = sel.rangeCount && sel.anchorNode && (sel.anchorNode.parentElement?.closest("#vbody .ndoc, #feed .card, #sheet"));
+  const inside = sel.rangeCount && sel.anchorNode && (sel.anchorNode.parentElement?.closest("#vbody .ndoc, #feed .card, #sheet")) && !sel.anchorNode.parentElement?.closest("a") && !(sel.anchorNode.parentElement?.closest("#vbody") && !$("viewer").classList.contains("editing"));
   if(!t || t.length>30 || t.includes("\n") || !inside){ if(!fixBar.matches(":focus-within")) fixBar.hidden=true; return; }
   fxSel=t; $("fxOld").textContent=`'${t}' ${countAll(t)}곳`; $("fxNew").value=t;
   const r=sel.getRangeAt(0).getBoundingClientRect();
@@ -1027,7 +1123,7 @@ function beginRun(label){
   state.timer = setInterval(()=>{
     state.t=(Date.now()-state.t0)/1000; $("clock").textContent=fmt(state.t);
     $("dictWarn").hidden = !(state.micOn && Date.now()-state.lastInput>45000);
-    if(!state.busy && state.t-state.lastCut>=60) cut(false);
+    if(!state.busy && state.t-state.lastCut>=CUTSEC) cut(false);
     fadeLabels();
   }, 500);
 }
@@ -1051,23 +1147,32 @@ startLive = async function(){
   let stream;
   try{ stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}}); }
   catch(e){ const m="마이크가 허용되지 않았습니다. 주소창 옆 자물쇠(또는 ⋮ → 설정 → 사이트 설정 → 마이크)에서 이 사이트의 마이크를 허용한 뒤 다시 '회의 시작'을 누르세요"; $("dictWarn").textContent=m; $("dictWarn").hidden=false; log(`마이크 안 됨: ${e.name}`,"no"); alert(m+" ("+e.name+")"); return; }
-  beginRun("마이크 → PC 받아쓰기"); state.micOn=true;
-  pcFetch("/new","{}").catch(()=>{}); // PC에 새 회의 파일을 연다(대화창 분석이 이 회의만 본다)
+  beginRun("마이크 → PC 받아쓰기"); state.micOn=true; nowSum=""; sumSeq=state.seq||0; sumN=0; liveCards=[]; $("nowSum").textContent=""; state.micWarn="";
+  try{ Object.assign(state.fixes, JSON.parse(localStorage.getItem("gist_fixes")||"{}")); }catch(_){} // 전에 고친 말을 이 회의 받아쓰기에도 쓴다
+  let resumed=false;
+  try{ const k=JSON.parse(localStorage.getItem("gist_live")||"null");
+    if(k && Date.now()-k.at<30*60*1000 && confirm("30분 안에 끊긴 회의가 있습니다. 이어서 할까요?")){
+      resumed=true; state.t0=k.t0; state.lines=k.lines||[]; state.seq=state.cutSeq=sumSeq=Math.max(0,...state.lines.map(l=>l.a||0));
+      state.lastCut=(Date.now()-k.t0)/1000; nowSum=k.nowSum||""; $("nowSum").textContent=nowSum;
+      liveCards=k.cards||[]; for(const x of liveCards) addCard(x.t, x.text, x.imp||0); state.summaries=liveCards.map(x=>x.text.replace(/\[\[|\]\]/g,""));
+    } }catch(_){}
+  if(!resumed) pcFetch("/new","{}").catch(()=>{}); // PC에 새 회의 파일을 연다(이어 가면 같은 파일에 계속 적는다)
   const ctx = new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
-  const src = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096,1,1);
-  let buf=[], n=0, startAt=0, queue=Promise.resolve();
+  const src = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096,1,1); micGuard(stream, ctx);
+  let buf=[], n=0, startAt=0, queue=Promise.resolve(), sil=0;
   const CH = 10; // 초
   proc.onaudioprocess = e => {
     if(!state.running) return;
     const d=e.inputBuffer.getChannelData(0); buf.push(new Float32Array(d)); n+=d.length;
-    if(n < ctx.sampleRate*CH) return;
+    let fs=0; for(let i=0;i<d.length;i+=8) fs+=d[i]*d[i]; const lv=Math.sqrt(fs/(d.length/8)); lvlPush(lv); sil = lv<0.008 ? sil+1 : 0;
+    const dur=n/ctx.sampleRate; if(!(dur>=6 || (dur>=2 && sil>=3))) return; // 0.75초쯤 조용하면 그 자리에서 보낸다(길어도 6초)
     const all=new Float32Array(n); let o=0; for(const x of buf){ all.set(x,o); o+=x.length; }
-    buf=[]; n=0; const at=startAt; startAt=(Date.now()-state.t0)/1000;
+    buf=[]; n=0; sil=0; const at=startAt; startAt=(Date.now()-state.t0)/1000;
     let ss=0; for(let i=0;i<all.length;i+=8) ss+=all[i]*all[i];
     if(Math.sqrt(ss/(all.length/8)) < 0.004) return; // 조용한 10초는 보내지 않는다
     const wav=wavOf(all, ctx.sampleRate);
     queue = queue.then(async()=>{
-      try{ const j=await pcFetch("/stt", wav, "audio/wav"); state.lastInput=Date.now(); const t=ghostCut(j.text||""); if(t) addHeard(t, at); }
+      try{ const j=await pcFetch("/stt", wav, "audio/wav"); state.lastInput=Date.now(); const t=ghostCut(j.text||""); if(t){ addHeard(t, at); lcLine(state.lines.find(x=>x.a===state.seq)); liveSum(); saveLive(); } }
       catch(err){ log(`받아쓰기 실패: ${err.message||err.code}`,"no"); }
     });
   };
@@ -1108,6 +1213,250 @@ let pcSavedLen=0;
 function pcSaveMinutes(){ try{ if(!state.minutes || !pcConf().pc) return; const h=buildHtml(); if(h.length===pcSavedLen) return; pcSavedLen=h.length;
   pcFetch("/save", h, "text/html").then(j=>log(`PC에 회의록 저장: ${j.file||""}`,"ok")).catch(e=>{ pcSavedLen=0; log(`PC 저장 실패: ${e.message||e.code}`,"no"); }); }catch(_){} }
 const _packBtn0=window.packBtn; window.packBtn=function(){ _packBtn0(); if($("pack").classList.contains("ready") && !(state.pending>0)) setTimeout(pcSaveMinutes, 300); };
+</script>
+<script>
+// 느끼는 실시간: 목소리 파형, 본문 맨 아래 '지금 쓰는 카드'(받아쓴 말이 타자 치듯 쌓이고, 숫자는 칩으로, 지금 이야기 한 줄, 1분 카드까지 진행 막대)
+// 라벨 창: 처음 보는 말이면 뜻 후보 1~3을 먼저 보여 주고 고르게 한다. 고른 뜻은 이 기기와 PC에 기억해 다음부터 바로 그 뜻으로 찾는다
+let termDict={}; try{ termDict=JSON.parse(localStorage.getItem("gist_terms")||"{}"); }catch(_){}
+const _openSheet0 = window.openSheet;
+let sheetTimer=null; function sheetArm(){ clearTimeout(sheetTimer); sheetTimer=setTimeout(()=>{ $("sheet").hidden=true; }, 20000); }
+document.addEventListener("pointerdown", e=>{ const sh=$("sheet"); if(sh.hidden) return; if(sh.contains(e.target)){ sheetArm(); return; } if(!e.target.closest(".lab,.term,.picked button")) sh.hidden=true; }, true);
+window.openSheet = function(b, keyword, ctx, query, brief){
+  const go=(meaning)=>{ const m=meaning ? `${keyword} = ${meaning}` : ""; _openSheet0(b, keyword, m ? ctx+"\n(사용자 확인: "+m+")" : ctx, meaning ? keyword+" "+meaning : query, meaning||brief); sheetArm(); };
+  if(termDict[keyword] || labelCache[keyword]?.started) return go(termDict[keyword]);
+  $("sheet").dataset.k="?"+keyword; $("shTitle").textContent=keyword; const body=$("shBody"); body.replaceChildren();
+  const q=document.createElement("p"); q.textContent="어떤 뜻인가요? 고르면 그 뜻으로 찾아봅니다."; const box=document.createElement("div"); box.className="pick";
+  const st=document.createElement("span"); st.className="shSt"; st.textContent="뜻 후보를 찾는 중…"; body.append(q, box, st); $("sheet").hidden=false; sheetArm();
+  const choose=(m)=>{ if(m){ termDict[keyword]=m; try{ localStorage.setItem("gist_terms", JSON.stringify(termDict)); }catch(_){} pcLog({kind:"term", k:keyword, meaning:m}); } go(m); };
+  const other=document.createElement("button"); other.type="button"; other.textContent="다른 뜻이에요(직접 쓰기)";
+  other.onclick=()=>{ const i=document.createElement("input"); i.placeholder=keyword+"의 뜻을 짧게"; other.replaceWith(i); i.focus(); i.onkeydown=e=>{ if(e.key==="Enter" && !e.isComposing && i.value.trim()) choose(i.value.trim()); }; };
+  const skip=document.createElement("button"); skip.type="button"; skip.textContent="모르겠어요(그냥 찾기)"; skip.onclick=()=>choose("");
+  (async()=>{ let cands=[];
+    try{ const r=await gistSample.json(`회의 중 나온 '${keyword}'가 무엇을 가리킬 수 있는지, 회의 맥락에 맞는 뜻 후보를 가능성 높은 순서로 최대 3개 쓴다. 한 후보는 15자 안팎의 짧은 설명(예: "PNC 파이낸셜(미국 은행)"). 맥락에서 뜻이 분명하면 1개만.\n회의 맥락:\n${String(ctx||"").slice(-800)}\nJSON만: {"cands":["...","..."]}`,{modelTier:"quick"}); cands=(Array.isArray(r?.cands)?r.cands:[]).map(String).filter(Boolean).slice(0,3); }catch(_){}
+    if($("sheet").dataset.k!=="?"+keyword) return;
+    cands.forEach((m,i)=>{ const x=document.createElement("button"); x.type="button"; x.textContent=`${i+1}. ${m}`; x.onclick=()=>choose(m); box.append(x); });
+    box.append(other, skip); st.textContent = cands.length ? "맞는 뜻이 없으면 '다른 뜻'을 눌러 알려 주세요" : "후보를 찾지 못했습니다. 뜻을 알려 주시면 그 뜻으로 찾습니다"; })();
+};
+const CUTSEC=25; // 요약 카드 주기(초): 25초 + 요약 호출 약 7초 → 첫 카드 약 32초
+function pcLog(rec){ if(state.liveMode) pcFetch("/log", JSON.stringify(rec)).catch(()=>{}); } // 화면 기록을 PC 회의 폴더에도 남긴다
+const lvlH=[0,0,0,0,0,0,0];
+function lvlPush(v, reset){ if(reset){ lvlH.fill(0); } else { lvlH.push(Math.min(1, v*14)); lvlH.shift(); }
+  const bars=document.querySelectorAll("#lvl i"); bars.forEach((b,i)=>b.style.transform=`scaleY(${Math.max(.12, lvlH[i])})`); }
+function lcEnsure(){ let c=$("liveCard"); if(c) return c; $("empty")?.remove();
+  c=document.createElement("div"); c.id="liveCard"; c.className="card";
+  c.innerHTML='<div class="t"><span class="dot"></span>지금 쓰는 카드 <span class="lct"></span></div><div class="lcnow"></div><div class="lclines"></div><div class="lcchips"></div><div class="lcbar"><i></i></div><div class="lcst"></div>';
+  $("feed").append(c); return c; }
+// 이름 · 용어 라벨: '지금 이야기'를 고쳐 쓸 때 함께 뽑아 몇 초 만에 가로 칩으로 띄우고, 누르면 찾아본 결과 창을 연다
+function lcTerm(k, force){ if(!k || k.length<2 || (!force && state.asked.has(k))) return; state.asked.add(k);
+  const c0=$("liveCard"); if(c0 && [...c0.querySelectorAll(".lab.tm")].some(x=>x.textContent===k)) return;
+  const c=lcEnsure(), cb=c.querySelector(".lcchips"), b=document.createElement("button"); b.type="button"; b.className="lab tm"; b.textContent=k;
+  b.onclick=()=>openSheet(b, k, state.lines.slice(-12).map(l=>l.s).join("\n"), k, ""); cb.append(b); state.stats.sug++; pcLog({kind:"label", k}); }
+function lcReset(){ const c=$("liveCard"); if(!c) return; c.querySelector(".lclines").innerHTML="";
+  c.querySelectorAll(".lcchips .lab:not(.tm)").forEach(x=>x.remove()); const tms=[...c.querySelectorAll(".lcchips .tm")]; tms.slice(0,-6).forEach(x=>x.remove()); } // 이름 라벨은 최근 6개를 남긴다
+function chipsOf(s){ const re=/\d[\d,.]*\s*(?:조|억|천만|백만|만|천)?\s*(?:원|달러|%|퍼센트|개월|년|월|일|주|명|곳|평|개|건|층|시간)|\d[\d,.]*\s*(?:조|억|천만|백만|만)/g;
+  return [...new Set((s.match(re)||[]).map(x=>x.replace(/\s+/g," ").trim()))].slice(0,4); }
+// 받아쓴 말 바로 고치기: 낱말을 누르면 그 자리에서 고친다. 두 글자 이상이면 고친 말 사전에 넣어 이 회의 전체와 앞으로 오는 받아쓰기에 쓴다
+function saveFixes(){ try{ localStorage.setItem("gist_fixes", JSON.stringify(state.fixes)); }catch(_){} }
+function lcRender(d){ const L=d._L; d.replaceChildren();
+  for(const w of L.s.split(/(\s+)/)){ if(!w.trim()){ d.append(w); continue; }
+    const b=document.createElement("span"); b.className="w"; b.textContent=w; b.onclick=()=>wordEdit(b, d, w); d.append(b); }
+  if(L.raw && L.raw!==L.s){ const o=document.createElement("small"); o.className="raw"; o.textContent="받아쓰기: "+L.raw; d.append(o); } }
+function lcRefresh(){ document.querySelectorAll("#liveCard .lcl.done").forEach(lcRender); }
+function wordEdit(span, d, w){ if(span.querySelector("input")) return;
+  const core=w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,"") || w;
+  const inp=document.createElement("input"); inp.className="wi"; inp.value=core; inp.size=Math.max(2, core.length+2);
+  span.replaceChildren(inp); inp.focus(); inp.select();
+  let done=false; const commit=()=>{ if(done) return; done=true; const v=inp.value.trim();
+    if(v && v!==core){ const L=d._L;
+      pcLog({kind:"fix", from:core, to:v, line:L.raw||L.s});
+      if(core.length>=2){ applyFix(core, v); saveFixes(); }
+      else { L.raw ??= L.s; L.s=L.s.replace(core, v); log(`고친 말(이 줄만): ${core} → ${v}`,"ok"); } }
+    lcRefresh(); };
+  inp.onkeydown=e=>{ if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); commit(); } else if(e.key==="Escape"){ done=true; lcRefresh(); } };
+  inp.onblur=commit; }
+// 요약 카드 바로 고치기: 카드 글을 누르면 그 자리에서 고치고, Enter나 바깥을 누르면 저장한다
+document.addEventListener("click", e=>{ const p=e.target.closest("#feed .card:not(#liveCard) > p"); if(!p || e.target.closest("button") || p.isContentEditable) return;
+  const before=p.textContent; p.contentEditable="true"; p.classList.add("editing"); p.focus();
+  p.onkeydown=ev=>{ if(ev.key==="Enter" && !ev.isComposing){ ev.preventDefault(); p.blur(); } };
+  p.onblur=()=>{ p.contentEditable="false"; p.classList.remove("editing"); const after=p.textContent.trim(); if(!after || after===before) return;
+    state.summaries=state.summaries.map(x=>x===before ? after : x);
+    for(const x of liveCards) if(x.text.replace(/\[\[|\]\]/g,"")===before) x.text=after;
+    saveLive(); pcLog({kind:"card_edit", before, after}); log("요약 카드를 고쳤습니다","ok"); }; });
+// 다른 앱(키보드 음성 입력 등)이 마이크를 가져가면 지금 쓰는 카드에 알리고, 소리 처리가 멈추면 다시 켠다
+function micGuard(stream, ctx){ const tr=stream.getAudioTracks()[0]; if(!tr) return;
+  tr.onmute=()=>{ state.micWarn="다른 앱(키보드 음성 입력 등)이 마이크를 쓰는 동안 듣기가 멈춥니다. 끝나면 이어집니다"; log("마이크 잠시 멈춤","no"); };
+  tr.onunmute=()=>{ state.micWarn=""; log("마이크 다시 들음","ok"); };
+  tr.onended=()=>{ state.micWarn="마이크가 끊겼습니다. '끝내기' 뒤 '회의 시작'을 다시 눌러 주세요"; log("마이크 끊김","no"); };
+  ctx.onstatechange=()=>{ if(ctx.state!=="running" && state.running){ state.micWarn="소리 처리가 멈춰 다시 켜는 중…"; ctx.resume().catch(()=>{}); } else if(ctx.state==="running" && /소리 처리/.test(state.micWarn||"")) state.micWarn=""; };
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && state.running && ctx.state!=="running") ctx.resume().catch(()=>{}); }); }
+function lcLine(L){ if(!L) return; const s=L.s, c=lcEnsure(), box=c.querySelector(".lclines"), d=document.createElement("div"); d.className="lcl"; d._L=L; box.append(d);
+  let i=0; const tick=()=>{ i+=2; d.textContent=s.slice(0,i); if(i<s.length) setTimeout(tick,28); else { d.classList.add("done"); lcRender(d); } }; tick();
+  while(box.children.length>6) box.firstChild.remove();
+  const cb=c.querySelector(".lcchips"); for(const k of chipsOf(s)) if(![...cb.children].some(x=>x.textContent===k)){ const b=document.createElement("span"); b.className="lab"; b.textContent=k; cb.append(b); }
+  const f=$("feed"); f.scrollTop=f.scrollHeight; }
+setInterval(()=>{ if(!state.running || !state.liveMode) return; const c=lcEnsure(), el=state.t-state.lastCut;
+  c.querySelector(".lct").textContent="· "+fmt(state.lastCut)+"부터";
+  c.querySelector(".lcnow").textContent = nowSum ? "지금 이야기: "+nowSum : (c.querySelector(".lclines").children.length ? "지금 이야기를 정리하는 중…" : "듣고 있습니다…");
+  const bar=c.querySelector(".lcbar i"), st=c.querySelector(".lcst"), late=state.busy || el>=CUTSEC;
+  c.classList.toggle("wait", late); bar.style.width = late ? "100%" : Math.min(100, el/CUTSEC*100)+"%";
+  st.textContent = state.micWarn ? state.micWarn : late ? "카드로 정리하는 중…" : `정리 중 · ${Math.max(1, Math.ceil(CUTSEC-el))}초 뒤 카드로 정리`;
+  st.classList.toggle("warn", !!state.micWarn);
+}, 250);
+let nowSum="", sumBusy=false, sumSeq=0, sumN=0, liveCards=[];
+function saveLive(){ try{ localStorage.setItem("gist_live", JSON.stringify({at:Date.now(), t0:state.t0, lines:state.lines.slice(-400), nowSum, cards:liveCards.slice(-120)})); }catch(_){} }
+async function liveSum(){ // 새로 도착한 말로 '지금 요약'을 고쳐 쓰고, 18번(약 3분)마다 처음부터 다시 요약해 오류가 쌓이지 않게 한다
+  if(sumBusy || !state.running) return;
+  const fresh=state.lines.filter(l=>l.a>sumSeq); if(!fresh.length) return;
+  sumBusy=true; const upto=state.seq; sumN++;
+  const full=sumN%18===0, src=full ? state.lines.slice(-60) : fresh;
+  const p=`너는 대면 회의 보조 앱 GIST다. ${full?"아래 회의 글로 지금까지의 흐름을 처음부터 요약한다.":"지금까지 요약을 새로 들어온 말로 고쳐 쓴다. 새 내용이 없으면 앞 요약을 그대로 둔다."} 한국어 80자 이내(넘기지 않는다), 띄어쓰기를 지킨 한두 문장으로 지금 무슨 이야기인지 한눈에 보이게. 분명히 정했다는 말이 있을 때만 "결정"이라 쓰고 앞에 둔다. 제안 · 의견("~하죠", "~할까요")은 "제안", "논의 중"으로 쓴다.
+${full?"":"지금까지 요약: "+(nowSum||"없음")+"\n"}${full?"회의 글":"새로 들어온 말"}:
+${src.map(l=>l.s).join("\n")}
+${full?"":'terms: 새로 들어온 말에 나온 회사 · 기관 · 지명 · 사업 · 제품 이름과 전문 용어 0~3개(받아쓰기가 조금 이상해도 이름으로 보이면 넣는다). 일상어는 넣지 않는다.\n'}JSON만: {"summary":"..."${full?"":',"terms":["..."]'}}`;
+  try{ const r=await gistSample.json(p,{modelTier:"quick"}); if(r&&r.summary){ nowSum=String(r.summary); $("nowSum").textContent=nowSum; }
+    for(const k of (Array.isArray(r?.terms)?r.terms:[]).slice(0,3)) lcTerm(String(k).trim());
+    sumSeq=upto; }
+  catch(_){}
+  finally{ sumBusy=false; if(state.running && state.lines.some(l=>l.a>sumSeq)) liveSum(); }
+}
+</script>
+<script>
+// ② 라벨 · 밑줄 말을 누르면 창을 띄우지 않고 뒤에서 찾는다. 뜻이 여럿일 때만 작은 고르기 칸(번호 · 직접 쓰기 · 찾기)을 끼워 보이고,
+//    찾은 결과는 같은 라벨을 한 번 더 누르거나 위 '내가 고른 라벨'을 누를 때 연다(사용자가 원할 때만 창)
+window.openSheet = function(b, keyword, ctx, query, brief){
+  const sh=$("sheet"), c=labelCache[keyword];
+  if(c?.started){ sh.dataset.k=keyword; renderSheet(c); sh.hidden=false; sheetArm(); return; }
+  let ran=false; const run=(meaning)=>{ if(ran) return; ran=true; const m=meaning ? `${keyword} = ${meaning}` : "";
+    _openSheet0(b, keyword, m ? ctx+"\n(사용자 확인: "+m+")" : ctx, meaning ? keyword+" "+meaning : query, meaning||brief); sh.hidden=true; };
+  toast(`'${keyword}' 찾는 중 · 다시 누르면 결과`);
+  if(termDict[keyword]) return run(termDict[keyword]);
+  b.classList.add("asking");
+  (async()=>{ let cands=[];
+    try{ const r=await gistSample.json(`회의 중 나온 '${keyword}'가 무엇을 가리킬 수 있는지, 회의 맥락에 맞는 뜻 후보를 가능성 높은 순서로 최대 3개 쓴다. 한 후보는 15자 안팎의 짧은 설명(예: "PNC 파이낸셜(미국 은행)"). 맥락에서 뜻이 분명하면 1개만.\n회의 맥락:\n${String(ctx||"").slice(-800)}\nJSON만: {"cands":["...","..."]}`,{modelTier:"quick"}); cands=(Array.isArray(r?.cands)?r.cands:[]).map(String).filter(Boolean).slice(0,3); }catch(_){}
+    b.classList.remove("asking");
+    if(cands.length<2) return run(cands[0]||"");
+    const choose=(m)=>{ if(m){ termDict[keyword]=m; try{ localStorage.setItem("gist_terms", JSON.stringify(termDict)); }catch(_){} pcLog({kind:"term", k:keyword, meaning:m}); } run(m); };
+    sh.dataset.k="?"+keyword; $("shTitle").textContent=keyword; const box=document.createElement("div"); box.className="pick";
+    cands.forEach((m,i)=>{ const x=document.createElement("button"); x.type="button"; x.textContent=`${i+1}. ${m}`; x.onclick=()=>choose(m); box.append(x); });
+    const own=document.createElement("button"); own.type="button"; own.textContent="직접 쓰기";
+    own.onclick=()=>{ const i=document.createElement("input"); i.placeholder=keyword+"의 뜻"; own.replaceWith(i); i.focus(); i.onkeydown=e=>{ if(e.key==="Enter" && !e.isComposing && i.value.trim()) choose(i.value.trim()); }; };
+    const any=document.createElement("button"); any.type="button"; any.textContent="찾기"; any.onclick=()=>choose("");
+    box.append(own, any); $("shBody").replaceChildren(box); sh.hidden=false; sheetArm();
+    setTimeout(()=>run(cands[0]), 20000); // 고르지 않고 지나가면 가장 그럴듯한 뜻으로 찾아 둔다
+  })();
+};
+// 결과 화면: 표지 · 회의록을 먼저 펼치고, 찾아본 자료는 뒤에 한 줄 카드로 접는다. ✎ 고치기를 누른 동안만 회의록 · 자료를 고친다
+function oneLine(n){ return [...n.querySelectorAll("li,p")].map(e=>e.textContent.replace(/\s+/g," ").trim()).find(t=>t.length>=12) || ""; }
+window.openCompiled = function(given, label){
+  const ps=given||parts(); if(ps.length<2) return;
+  $("viewer").classList.remove("editing"); $("vedit").hidden=!!given; $("vedit").textContent="✎ 고치기";
+  $("vtitle").textContent=label || `회의록 · 자료 ${state.docs.length}건`;
+  const body=$("vbody"); body.replaceChildren();
+  const gnb=document.createElement("nav"); gnb.className="vgnb"; body.append(gnb);
+  const go=(t, el, top)=>{ const b=document.createElement("button"); b.textContent=t; b.onclick=()=>body.scrollTo({top:top?0:el.offsetTop-gnb.offsetHeight,behavior:"smooth"}); gnb.append(b); };
+  let folds=null;
+  ps.forEach((x,i)=>{
+    const n=document.createElement("div"); n.className="ndoc"; n.innerHTML=x.html; n.style.borderBottom="6px solid #D5D8D0"; linkify(n); n.querySelectorAll("a[href^='http']").forEach(a=>{ a.target="_blank"; a.rel="noopener"; });
+    if(i && !given){ n.contentEditable="false"; n.spellcheck=false; n.dataset.part=x.k; n.classList.add("ved");
+      n.addEventListener("input",()=>{ if(x.k==="회의록") state.minutes=n.innerHTML; else { const d=state.docs.find(d=>d.keyword===x.k); if(d) d.html=n.innerHTML; } }); }
+    if(i<2 && (x.k==="표지" || x.k==="회의록")){ body.append(n); go(x.k, n, !i); return; }
+    if(!folds){ folds=document.createElement("section"); folds.className="folds"; folds.innerHTML='<div class="foldsH"></div>'; body.append(folds); go("찾아본 자료", folds); }
+    const d=document.createElement("details"); d.className="fold"; const sm=document.createElement("summary");
+    const kb=document.createElement("b"); kb.textContent=x.k; const sp=document.createElement("span"); sp.textContent=oneLine(n); sm.append(kb, sp); d.append(sm, n); folds.append(d);
+  });
+  if(folds) folds.querySelector(".foldsH").textContent=`찾아본 자료 ${folds.querySelectorAll("details").length}건`;
+  $("viewer").hidden=false;
+};
+$("vedit").onclick=()=>{ const on=$("viewer").classList.toggle("editing");
+  document.querySelectorAll("#vbody .ndoc.ved").forEach(n=>n.contentEditable=on?"true":"false");
+  $("vedit").textContent=on?"고치기 끝":"✎ 고치기"; if(!on){ $("fixbar")?.setAttribute("hidden",""); pcSaveMinutes(); } };
+packBtn();
+</script>
+<style>
+/* 마스터 11-02 의견: 글자를 조금 줄여 자리를 넓힌다 */
+body{font-size:14px}
+.card p{font-size:14.5px;line-height:1.55}
+:root{--lab-h:26px;--lab-fs:12px;--lab-px:9px}
+#live{font-size:12.5px}
+/* 마스터 11-02 답12 1안: 찾은 결과는 창 대신 위 '찾아본 말' 칸에 쌓는다 */
+#sheet{display:none!important}
+#picked{display:block;overflow-x:hidden;overflow-y:auto;max-height:32vh;padding:6px 12px}
+#picked[hidden]{display:none}
+#picked::before{content:"찾아본 말";display:block;margin:0 0 2px}
+#picked .irow{border-top:1px solid var(--line);padding:4px 0}
+#picked .irow:first-of-type{border-top:0}
+#picked .ihead{display:flex;align-items:center;gap:8px;width:100%;min-height:26px;padding:0;border:0;border-radius:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+#picked .ihead b{flex:none;font-size:13px}
+#picked .ihead .ione{flex:1;min-width:0;font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#picked .ihead .ist{flex:none;font-size:11px;color:var(--sub)}
+#picked .irow.done .ihead b::after{content:" ✓";color:var(--accent)}
+#picked .ibody{margin:3px 0 2px;font-size:13px;line-height:1.5;white-space:pre-line}
+#picked .irow:not(.open) .ibody{display:none}
+#picked .irow.open .ione{display:none}
+#picked .src a{display:block;font-size:12px}
+#picked .ibtn{font-size:12px}
+#picked .ibtn .shSt{margin-left:8px;color:var(--sub)}
+#picked .pick{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+#picked .pick button{font:inherit;font-size:12.5px;min-height:30px;padding:3px 10px;border:1px solid var(--accent);border-radius:10px;background:transparent;color:var(--ink)}
+#picked .pick input{flex-basis:100%;font:inherit;padding:5px 8px;border:1px solid var(--accent);border-radius:8px;background:var(--panel);color:var(--ink)}
+</style>
+<script>
+// ③ 마스터 11-02 답12 1안: 라벨 · 밑줄 말을 누르면 창 없이 위 '찾아본 말' 칸에 한 줄이 생기고, 찾은 요약 · 출처가 그 줄에 채워진다.
+//    뜻이 여럿이면 고르기 칸도 그 줄 안에 끼운다. 줄을 누르면 펼치고 접는다(펼친 줄은 하나)
+(()=>{
+const nav=$("picked");
+function row(k){
+  let r=[...nav.querySelectorAll(".irow")].find(x=>x.dataset.k===k); if(r) return r;
+  r=document.createElement("div"); r.className="irow"; r.dataset.k=k;
+  const h=document.createElement("button"); h.type="button"; h.className="ihead";
+  const b=document.createElement("b"); b.textContent=k;
+  const one=document.createElement("span"); one.className="ione";
+  const st=document.createElement("span"); st.className="ist";
+  h.append(b,one,st); h.onclick=()=>{ if(r.classList.contains("open")) r.classList.remove("open"); else focus(r); };
+  const body=document.createElement("div"); body.className="ibody";
+  r.append(h,body); nav.append(r); nav.hidden=false; return r;
+}
+function focus(r){ nav.querySelectorAll(".irow.open").forEach(x=>{ if(x!==r) x.classList.remove("open"); }); r.classList.add("open"); nav.hidden=false; r.scrollIntoView({block:"nearest",behavior:"smooth"}); }
+window.pickChip=c=>{ row(c.keyword); };
+window.pickDone=k=>{ row(k).classList.add("done"); };
+window.renderSheet=c=>{
+  const r=row(c.keyword); if(r.dataset.asking) return;
+  const text=c.lines ? c.lines.join("\n") : (c.brief||"찾는 중…");
+  r.querySelector(".ione").textContent=text.split("\n")[0];
+  r.querySelector(".ist").textContent=c.lines ? "" : "찾는 중";
+  const body=r.querySelector(".ibody"); body.replaceChildren();
+  const p=document.createElement("p"); p.style.margin="0"; p.textContent=text; body.append(p);
+  if(c.lines) body.append(sourceLinks(c.sources));
+  const line=document.createElement("div"); line.className="ibtn";
+  const more=document.createElement("a"); more.textContent="more"; more.title="검색 페이지를 새 창으로 엽니다";
+  more.href="https://search.naver.com/search.naver?query="+encodeURIComponent(c.query||c.keyword); more.target="_blank"; more.rel="noopener";
+  const s=document.createElement("span"); s.className="shSt"; s.textContent=c.lines ? (c.status||"") : "";
+  line.append(more,s); body.append(line);
+};
+window.openSheet=function(b, keyword, ctx, query, brief){
+  const c=labelCache[keyword], r=row(keyword); focus(r);
+  if(c?.started){ renderSheet(c); return; }
+  if(r.dataset.asking) return;
+  let ran=false; const run=(m)=>{ if(ran) return; ran=true; delete r.dataset.asking;
+    _openSheet0(b, keyword, m ? ctx+"\n(사용자 확인: "+keyword+" = "+m+")" : ctx, m ? keyword+" "+m : query, m||brief); };
+  if(termDict[keyword]) return run(termDict[keyword]);
+  r.dataset.asking="1"; r.querySelector(".ist").textContent="뜻 확인 중"; b?.classList.add("asking");
+  (async()=>{ let cands=[];
+    try{ const x=await gistSample.json(`회의 중 나온 '${keyword}'가 무엇을 가리킬 수 있는지, 회의 맥락에 맞는 뜻 후보를 가능성 높은 순서로 최대 3개 쓴다. 한 후보는 15자 안팎의 짧은 설명(예: "PNC 파이낸셜(미국 은행)"). 맥락에서 뜻이 분명하면 1개만.\n회의 맥락:\n${String(ctx||"").slice(-800)}\nJSON만: {"cands":["...","..."]}`,{modelTier:"quick"}); cands=(Array.isArray(x?.cands)?x.cands:[]).map(String).filter(Boolean).slice(0,3); }catch(_){}
+    b?.classList.remove("asking");
+    if(cands.length<2) return run(cands[0]||"");
+    const choose=(m)=>{ if(m){ termDict[keyword]=m; try{ localStorage.setItem("gist_terms", JSON.stringify(termDict)); }catch(_){} pcLog({kind:"term", k:keyword, meaning:m}); } run(m); };
+    const box=document.createElement("div"); box.className="pick";
+    cands.forEach((m,i)=>{ const x=document.createElement("button"); x.type="button"; x.textContent=`${i+1}. ${m}`; x.onclick=()=>choose(m); box.append(x); });
+    const own=document.createElement("button"); own.type="button"; own.textContent="직접 쓰기";
+    own.onclick=()=>{ const i=document.createElement("input"); i.placeholder=keyword+"의 뜻"; own.replaceWith(i); i.focus(); i.onkeydown=e=>{ if(e.key==="Enter" && !e.isComposing && i.value.trim()) choose(i.value.trim()); }; };
+    const any=document.createElement("button"); any.type="button"; any.textContent="찾기"; any.onclick=()=>choose("");
+    box.append(own, any);
+    r.querySelector(".ist").textContent="뜻 고르기"; r.querySelector(".ibody").replaceChildren(box); focus(r);
+    setTimeout(()=>run(cands[0]), 20000); // 고르지 않고 지나가면 가장 그럴듯한 뜻으로 찾아 둔다
+  })();
+};
+})();
 </script>
 </body>
 </html>
