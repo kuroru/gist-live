@@ -1477,6 +1477,12 @@ window.openSheet=function(b, keyword, ctx, query, brief){
 </script>
 <style>
 #recs{min-height:32px}
+/* 11-02 15:17 마스터 녹음 피드백: 모두 바꾸기 막대가 GIST 라벨 · 단추보다 크다 → 라벨 크기에 맞춤 */
+#fixbar{padding:4px 6px;gap:4px;border-radius:10px}
+#fixbar span{font-size:11px}
+#fixbar input{font-size:14px!important;height:var(--lab-h);padding:2px 8px;border-radius:999px}
+#fixbar button{min-height:var(--lab-h)!important;height:var(--lab-h);padding:0 10px!important;font-size:var(--lab-fs)!important;border-radius:999px;line-height:1}
+#fxGo{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 #recList{position:fixed;z-index:45;left:50%;transform:translateX(-50%);top:calc(52px + env(safe-area-inset-top,0px));width:min(92vw,420px);max-height:60vh;overflow-y:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 #recList .rh{display:flex;align-items:center;margin-bottom:6px}
 #recList .rh b{flex:1}
@@ -1547,6 +1553,41 @@ btn.onclick=async()=>{
   document.body.append(box);
 };
 window.gistRec={recStart, recStop, allMeets, blobOf, delMeet};
+})();
+</script>
+<script>
+// ⑤ 11-02 마스터 답18 1안: '회의록'을 누르면 PC가 새 GIST 회의록 템플릿으로 만든 회의록을 띄운다.
+//    찾아본 자료 · 고치기는 위 단추로 옛 화면을 연다. PC 회의가 아니거나 만들지 못하면 옛 화면 그대로
+(()=>{
+const _oc=window.openCompiled;
+let newHtml=null;
+async function fetchNew(){
+  for(let i=0;i<4;i++){ // 끝내기 직후면 회의록 데이터가 PC에 닿기 전일 수 있어 조금 기다렸다 다시 묻는다
+    try{ const j=await pcFetch("/minutes","{}"); if(j.ok) return j.html;
+      if(!/회의록 데이터 없음/.test(j.error||"")){ log(`새 양식 회의록 못 만듦: ${String(j.error||"").slice(-120)}`,"wa"); return null; } }
+    catch(e){ log(`새 양식 회의록 못 만듦: ${e.code||e}`,"wa"); return null; }
+    await new Promise(r=>setTimeout(r,2500));
+  }
+  return null;
+}
+function oldView(given, label){ $("vhtml").hidden=false; $("vsave").hidden=false; return _oc(given, label); }
+window.openCompiled=async function(given, label){
+  if(given || !state.pcMeet || !state.minutes) return oldView(given, label);
+  const body=$("vbody"); $("vtitle").textContent="회의록 만드는 중…"; body.replaceChildren(); $("vedit").hidden=true; $("viewer").hidden=false;
+  newHtml = await fetchNew();
+  if(!newHtml){ toast("새 양식을 만들지 못해 기존 화면으로 엽니다"); return oldView(given, label); }
+  $("vtitle").textContent="GIST 회의록"; $("vhtml").hidden=true; $("vsave").hidden=true;
+  const bar=document.createElement("nav"); bar.className="vgnb";
+  const old=document.createElement("button"); old.type="button"; old.textContent=`찾아본 자료 ${state.docs.length}건 · 고치기`; old.onclick=()=>oldView();
+  const dl=document.createElement("button"); dl.type="button"; dl.textContent="회의록 받기";
+  dl.onclick=()=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([newHtml],{type:"text/html"})); a.download=`GIST_회의록_${new Date().toISOString().slice(0,10)}.html`; document.body.append(a); a.click(); a.remove(); };
+  bar.append(old, dl);
+  // 회의록 쪽은 794px 고정이라, 860px 폭 창으로 그린 뒤 화면 폭에 맞게 통째로 줄인다(휴대폰에서 오른쪽이 잘리지 않게)
+  const box=document.createElement("div"); box.style.cssText="position:relative;width:100%;height:calc(100vh - 110px);overflow:hidden";
+  const f=document.createElement("iframe"); f.title="GIST 회의록"; f.srcdoc=newHtml; f.style.cssText="position:absolute;left:0;top:0;width:860px;border:0;background:#fff;transform-origin:0 0";
+  const fit=()=>{ const s=Math.min(1, box.clientWidth/860); f.style.transform=`scale(${s})`; f.style.height=(box.clientHeight/s)+"px"; };
+  box.append(f); body.replaceChildren(bar, box); fit(); addEventListener("resize", fit);
+};
 })();
 </script>
 </body>
