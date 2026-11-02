@@ -575,6 +575,7 @@ ${seg}
 
 앞 주제: ${state.topic || "없음"}
 고친 말(받아쓰기 오류 → 바른 말, 요약 · 라벨에 바른 말을 쓴다): ${Object.entries(state.fixes).map(([a,b])=>a+"→"+b).join(", ") || "없음"}
+${window.glossHint?.()||""}
 
 1) summary: 이번 구간 요약, 한국어 150자 이내, 정한 것과 미룬 것을 구분. 제안 · 의견("~하죠", "~할까요", "~면 좋겠다")은 결정으로 쓰지 않고 "제안", "논의"로 쓴다. 분명히 정했다는 말이 있을 때만 "결정"이라고 쓴다.
 2) importance: 0 보통, 1 중요(돈 · 기한 · 조건 · 위험이 나옴), 2 핵심(결정이 났거나 결정을 뒤집을 말).
@@ -882,7 +883,7 @@ async function makeMinutes(){
   const spk=$("spk").checked;
   const said=state.lines.filter(l=>l.t<=state.t).map(l=>`[${fmt(l.t)}] ${l.s}`).join("\n");
   const raw = said.length<=40000 ? said : "";
-  const q=`대면 회의의 최종 회의록을 쓴다. 한국어, 받아쓰기에 없는 내용은 만들지 않는다. ${window.susHint?.()||""}
+  const q=`대면 회의의 최종 회의록을 쓴다. 한국어, 받아쓰기에 없는 내용은 만들지 않는다. ${window.susHint?.()||""}${window.glossHint?.()||""}
 회의록은 요약이 아니라 발언 기록이다(2026-11-02 마스터: 회의록에 있는 단어나 문장들을 최대한 살려서). flow의 points는 받아쓴 원문 문장을 최대한 그대로 옮긴다: 말한 낱말 · 숫자 · 고유명사 · 표현 · 말투(존댓말 · 반말)를 바꾸지 않고, 군말("어", "음", "그", "뭐지")과 같은 말 되풀이만 덜어낸다. 한 점에 한 발언, 앞에 [분:초] 시각을 붙인다. 뜻을 바꾸는 줄임 · 다른 말로 풀어 쓰기 · 여러 발언 합치기는 하지 않는다. 메인 주제의 발언은 빠뜨리지 않으며 개수 제한이 없다. 받아쓰기 오류로 보이는 말은 원문 뒤에 [바른 말 추정(확인 필요)]을 붙인다. 요약은 summary 세 줄과 decisions · actions · open에서만 한다.
 먼저 이 회의의 메인 주제를 하나 정하고, 메인 주제와 관련된 논의만 flow · decisions · actions · open에 쓴다. 메인 주제와 관련 없는 사담 · 인사 · 시험 삼아 한 말은 other에 한 줄로만 묶는다. 업무 안건이 전혀 없으면 title을 "업무 안건 없음(사담)"으로 하고 flow는 비운다. 제안 · 의견은 결정으로 쓰지 않는다.
 ${spk ? "화자 구분: 받아쓰기에는 화자 표시가 없다. 말투, 호칭, 역할, 앞뒤 맥락으로 화자를 화자 A, 화자 B…로 나누고 각 화자의 역할을 짐작해 적는다. 결정과 할 일에는 말한 화자를 붙인다. 짐작이므로 확신이 낮으면 (추정)을 붙인다." : "화자는 나누지 않는다."}
@@ -1629,7 +1630,12 @@ async function fetchNew(base, near){
 }
 // 11-02 마스터 답21 1안: 옛 양식 화면은 없앤다(PC 회의 폴더의 옛 파일은 기록으로 남김). PC가 알려 준 회의 이름(base)으로 새 양식을 받는다
 const _pf=pcFetch;
-pcFetch=window.pcFetch=async function(path, body, type){ const j=await _pf(path, body, type); if(path==="/new" && j?.base) state.pcBase=j.base; return j; };
+pcFetch=window.pcFetch=async function(path, body, type){ const j=await _pf(path, body, type);
+  if(path==="/new"){ if(j?.base) state.pcBase=j.base; _pf("/terms","{}").then(t=>{ state.gloss=Array.isArray(t?.terms)?t.terms:[]; log(`고유명사 사전 ${state.gloss.length}개`,"ok"); }).catch(()=>{}); }
+  return j; };
+// 고유명사 사전(PC 원자료\고유명사사전.json): 1분 요약 · 받아쓰기 확인 · 최종 회의록이 바른 표기를 알게 한다. 받아쓰기 엔진에는 넣지 않는다(설계안 P8)
+window.glossHint=()=>{ const g=(state.gloss||[]).slice(0,80); if(!g.length) return "";
+  return `이 사용자의 고유명사 사전(바른 표기 · 설명 · 예전에 잘못 받아쓴 꼴): ${g.map(t=>t.word+(t.note?`(${t.note})`:"")+(t.aliases?.length?` ← ${t.aliases.join("/")}`:"")).join("; ")}. 받아쓴 말이 사전의 잘못 받아쓴 꼴이거나 사전 말과 소리가 비슷하면 suspects에 사전 표기로 내고 summary에도 사전 표기를 쓴다. 사전에 없는 말을 사전 말로 억지로 바꾸지 않는다.\n`; };
 const _sh=saveHist;
 saveHist=function(){ _sh.apply(this, arguments); try{ const h=loadHist(); if(h[0] && state.pcBase && !h[0].base){ h[0].base=state.pcBase; localStorage.setItem("gist_hist", JSON.stringify(h)); } }catch(_){} };
 function note(msg, retry){ const body=$("vbody"); const p=document.createElement("p"); p.style.cssText="padding:24px 16px;font-size:15px;line-height:1.6"; p.textContent=msg; body.replaceChildren(p);
