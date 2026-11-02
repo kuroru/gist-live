@@ -1462,7 +1462,7 @@ window.openSheet=function(b, keyword, ctx, query, brief){
 #recList .ri span{flex:1;min-width:0}
 #recList .ri small{display:block;color:var(--sub);font-size:12px}
 #recList button{min-height:30px;padding:2px 10px;font-size:13px;border-radius:999px}
-#rec.taping::after{content:" 녹음 중";font-size:11px}
+#recs.taping{border-color:var(--bad);color:var(--bad)}
 @media (max-width:480px){#wipe{font-size:0!important;padding:3px 10px}#wipe::before{content:"↺";font-size:15px}}
 </style>
 <script>
@@ -1496,9 +1496,9 @@ function recStart(stream){
   const m=cur; putMeet(m).catch(()=>{});
   rec.ondataavailable=e=>{ if(e.data && e.data.size){ m.bytes+=e.data.size; putChunk(m.id, e.data).then(()=>putMeet(m)).catch(err=>log(`녹음 조각 저장 실패: ${err?.name||err}`,"no")); } };
   rec.onstop=()=>{ m.done=true; m.end=Date.now(); setTimeout(()=>putMeet(m).then(()=>saveFile(m)).then(()=>toast("회의 녹음을 휴대폰에 저장했습니다")).catch(()=>toast("녹음은 위 '녹음' 단추에서 받을 수 있습니다")), 400); };
-  rec.start(5000); $("rec").classList.add("taping"); log(`녹음 파일 시작(${m.type})`,"ok");
+  rec.start(5000); $("recs")?.classList.add("taping"); log(`녹음 파일 시작(${m.type})`,"ok");
 }
-function recStop(){ if(rec && rec.state!=="inactive"){ try{ rec.stop(); }catch(_){} } rec=null; $("rec").classList.remove("taping"); }
+function recStop(){ if(rec && rec.state!=="inactive"){ try{ rec.stop(); }catch(_){} } rec=null; $("recs")?.classList.remove("taping"); }
 const _startLive=startLive;
 startLive=async function(){ await _startLive.apply(this, arguments); if(mic?.stream && !rec) recStart(mic.stream); };
 const _stop=stop;
