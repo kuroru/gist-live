@@ -121,7 +121,8 @@ button:disabled{opacity:.5;cursor:default}
 #viewer .ndoc[contenteditable="true"]:focus-within{box-shadow:inset 0 0 0 2px #9B3E2D33}
 #fixbar{position:fixed;z-index:30;display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;max-width:calc(100vw - 16px)}
 #fixbar span{font-size:12px;color:var(--sub);white-space:nowrap}
-#fixbar input{width:120px;font:inherit;font-size:16px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+#fixbar button{white-space:nowrap}
+#fixbar input{width:110px;min-width:0;flex:1 1 80px;font:inherit;font-size:16px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 #fixbar button{min-height:34px;padding:4px 10px;font-size:13px}
 .toast{position:fixed;z-index:40;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:10px;font-size:14px}
 #viewer .vbody{flex:1;overflow-y:auto;overflow-x:auto;width:min(794px,100%);background:#FBFBF8}
@@ -1078,7 +1079,10 @@ document.addEventListener("selectionchange",()=>{
   if(!t || t.length>30 || t.includes("\n") || !inside){ if(!fixBar.matches(":focus-within")) fixBar.hidden=true; return; }
   fxSel=t; $("fxOld").textContent=`'${t}' ${countAll(t)}곳`; $("fxNew").value=t;
   const r=sel.getRangeAt(0).getBoundingClientRect();
-  fixBar.style.left=Math.max(8,Math.min(innerWidth-330, r.left))+"px"; fixBar.style.top=Math.max(8, r.top-52)+"px"; fixBar.hidden=false;
+  // 휴대폰 글 고르기 메뉴(복사 · 번역…)는 고른 글 위에 뜨므로 막대는 고른 글 아래에 둔다
+  fixBar.hidden=false; const w=fixBar.offsetWidth, h=fixBar.offsetHeight;
+  fixBar.style.left=Math.max(8,Math.min(innerWidth-w-8, r.left))+"px";
+  fixBar.style.top=(r.bottom+38+h < innerHeight ? r.bottom+38 : Math.max(8, r.top-h-60))+"px";
 });
 $("fxGo").onclick=()=>{ const b=$("fxNew").value.trim(); const n=applyFix(fxSel,b); fixBar.hidden=true; $("fxOld").textContent=""; if(n) toast(`'${fxSel}' → '${b}' ${n}곳 바꿈`); };
 $("fxNew").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("fxGo").click(); } });
@@ -1375,9 +1379,10 @@ packBtn();
 <style>
 /* 마스터 11-02 답12 1안: 찾은 결과는 창 대신 위 '찾아본 말' 칸에 쌓는다 */
 #sheet{display:none!important}
-#picked{display:block;overflow-x:hidden;overflow-y:auto;max-height:32vh;padding:6px 12px}
+/* 11-02 마스터: 요약 카드가 주인, 인포 칸은 세 줄 정도. 새 줄이 맨 위, 나머지는 칸 안에서 올려 본다 */
+#picked{display:block;overflow-x:hidden;overflow-y:auto;max-height:100px;padding:3px 12px;overscroll-behavior:contain}
 #picked[hidden]{display:none}
-#picked::before{content:"찾아본 말";display:block;margin:0 0 2px}
+#picked::before{display:none}
 #picked .irow{border-top:1px solid var(--line);padding:4px 0}
 #picked .irow:first-of-type{border-top:0}
 #picked .ihead{display:flex;align-items:center;gap:8px;width:100%;min-height:26px;padding:0;border:0;border-radius:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
@@ -1392,7 +1397,7 @@ packBtn();
 #picked .ibtn{font-size:12px}
 #picked .ibtn .shSt{margin-left:8px;color:var(--sub)}
 #picked .pick{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
-#picked .pick button{font:inherit;font-size:12.5px;min-height:30px;padding:3px 10px;border:1px solid var(--accent);border-radius:10px;background:transparent;color:var(--ink)}
+#picked .pick button{font:inherit;font-size:12px;min-height:26px;padding:2px 9px;border:1px solid var(--accent);border-radius:10px;background:transparent;color:var(--ink)}
 #picked .pick input{flex-basis:100%;font:inherit;padding:5px 8px;border:1px solid var(--accent);border-radius:8px;background:var(--panel);color:var(--ink)}
 </style>
 <script>
@@ -1409,9 +1414,24 @@ function row(k){
   const st=document.createElement("span"); st.className="ist";
   h.append(b,one,st); h.onclick=()=>{ if(r.classList.contains("open")) r.classList.remove("open"); else focus(r); };
   const body=document.createElement("div"); body.className="ibody";
-  r.append(h,body); nav.append(r); nav.hidden=false; return r;
+  r.append(h,body); nav.prepend(r); nav.hidden=false; return r;
 }
-function focus(r){ nav.querySelectorAll(".irow.open").forEach(x=>{ if(x!==r) x.classList.remove("open"); }); r.classList.add("open"); nav.hidden=false; r.scrollIntoView({block:"nearest",behavior:"smooth"}); }
+// 칸 안에서만 굴린다(화면 전체가 튀지 않게)
+function focus(r){ nav.querySelectorAll(".irow.open").forEach(x=>{ if(x!==r) x.classList.remove("open"); }); r.classList.add("open"); nav.hidden=false;
+  nav.scrollTo({top: nav.scrollTop + r.getBoundingClientRect().top - nav.getBoundingClientRect().top - 3, behavior:"smooth"}); }
+// 고친 말(모두 바꾸기)을 라벨 이름에도 적용한다
+const fixed=k=>{ let s=String(k); for(const [a,b] of Object.entries(state.fixes||{})) if(a) s=s.split(a).join(b); return s; };
+const _applyFix=applyFix;
+applyFix=function(a, b){
+  const n=_applyFix(a, b); if(!a || a===b) return n; let m=0;
+  m+=replaceText($("sug"), a, b);
+  for(const r of nav.querySelectorAll(".irow")){
+    m+=replaceText(r, a, b);
+    const k=r.dataset.k, nk=k.split(a).join(b);
+    if(nk!==k){ r.dataset.k=nk; const c=labelCache[k]; if(c){ c.keyword=nk; c.query=String(c.query||k).split(a).join(b); labelCache[nk]=c; delete labelCache[k]; } }
+  }
+  return n+m;
+};
 window.pickChip=c=>{ row(c.keyword); };
 window.pickDone=k=>{ row(k).classList.add("done"); };
 window.renderSheet=c=>{
@@ -1429,6 +1449,7 @@ window.renderSheet=c=>{
   line.append(more,s); body.append(line);
 };
 window.openSheet=function(b, keyword, ctx, query, brief){
+  keyword=fixed(keyword); if(query) query=fixed(query);
   const c=labelCache[keyword], r=row(keyword); focus(r);
   if(c?.started){ renderSheet(c); return; }
   if(r.dataset.asking) return;
