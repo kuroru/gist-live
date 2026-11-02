@@ -1616,6 +1616,24 @@ window.addSuspects=function(list){
 window.susHint=()=>{ const open=[...susp].filter(([,v])=>!v.done); return open.length ? `받아쓰기 확인이 끝나지 않은 말(들은 말 → 추정): ${open.map(([h,v])=>h+" → "+v.fix).join(", ")}. 이 말이 들어가는 자리에는 추정한 바른 말을 쓰고 뒤에 '(확인 필요)'를 붙인다. ` : ""; };
 window.gistSus={susp, markFeed};
 })();
+// ⑧ 11-02 마스터 "요약카드 내가 삭제 할 수 있게 해줘": 카드 머리의 ×로 지운다(지어낸 말 · 잘못 정리된 카드).
+//    지운 카드는 요약 목록 · 끊긴 회의 이어 하기 · PC 기록(card_del)에서 빠져 최종 회의록에 들어가지 않는다. 5초 안에 '되돌리기'
+(()=>{
+function delCard(c){
+  const text=c.querySelector("p")?.textContent||"", next=c.nextSibling, parent=c.parentNode; c.remove();
+  const i=state.summaries.indexOf(text); const s=i>=0 ? state.summaries.splice(i,1)[0] : null;
+  const k=liveCards.findIndex(x=>x.text.replace(/\[\[|\]\]/g,"")===text); const L=k>=0 ? liveCards.splice(k,1)[0] : null;
+  if(L) saveLive(); pcLog({kind:"card_del", t:L?.t, text});
+  const d=document.createElement("div"); d.className="toast"; d.textContent="카드를 지웠습니다 "; const u=document.createElement("button"); u.type="button"; u.textContent="되돌리기"; u.className="cundo";
+  u.onclick=()=>{ parent.insertBefore(c, next && next.parentNode===parent ? next : null); if(s!==null) state.summaries.splice(Math.max(0,i),0,s); if(L){ liveCards.splice(Math.max(0,k),0,L); saveLive(); } pcLog({kind:"card_undel", t:L?.t, text}); d.remove(); };
+  d.append(u); document.body.append(d); setTimeout(()=>d.remove(), 5000);
+}
+function addDel(c){ if(c.id==="liveCard" || !c.classList?.contains("card") || c.querySelector(":scope > .t > .cdel")) return; const t=c.querySelector(":scope > .t"); if(!t) return;
+  const b=document.createElement("button"); b.type="button"; b.className="cdel"; b.textContent="×"; b.title="이 카드 지우기"; b.setAttribute("aria-label","이 카드 지우기");
+  b.onclick=e=>{ e.stopPropagation(); delCard(c); }; t.append(b); }
+new MutationObserver(ms=>{ for(const m of ms) m.addedNodes.forEach(n=>{ if(n.nodeType===1) addDel(n); }); }).observe($("feed"), {childList:true});
+document.querySelectorAll("#feed > .card").forEach(addDel);
+})();
 // ⑤ 11-02 마스터 답18 1안: '회의록'을 누르면 PC가 새 GIST 회의록 템플릿으로 만든 회의록을 띄운다.
 //    찾아본 자료 · 고치기는 위 단추로 옛 화면을 연다. PC 회의가 아니거나 만들지 못하면 옛 화면 그대로
 (()=>{
@@ -1720,6 +1738,9 @@ wb.onclick=async()=>{ $("vedit").hidden=true; $("vhtml").hidden=true; $("vsave")
 </script>
 <style>
 #wikiBtn{min-height:32px}
+.card > .t{display:flex;align-items:center;gap:6px}
+.card .cdel{margin-left:auto;min-height:26px!important;min-width:30px;padding:0 8px!important;font-size:16px;line-height:1;border:0;background:transparent;color:var(--sub);border-radius:999px}
+.toast .cundo{margin-left:8px;min-height:26px!important;padding:0 10px!important;font-size:13px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit}
 @media (max-width:420px){.top .ctl{gap:5px}.top button{padding:3px 9px!important}.top .clock{font-size:12px}}
 .minfo{padding:12px 14px 40px;font-size:15px;max-width:640px;margin:0 auto;min-height:100%;background:var(--panel);color:var(--ink)}
 #vbody:has(.minfo){background:var(--panel)}
