@@ -582,8 +582,9 @@ ${seg}
 4) labels: 참석자가 회의를 멈추고 따로 찾아볼 법한 것(모르는 용어, 회사, 제도, 시세 · 수치, 규정)을 0~4개. 질문 꼴이 아니라 2~10자 명사 라벨로. 이미 낸 것은 빼라. 회사 · 기관 · 지명 · 사업 · 제품 이름과 전문 용어는 시험 삼아 한 말처럼 보여도, 받아쓰기가 조금 이상해도 이름으로 보이면 빠짐없이 낸다. 0개는 그런 말이 전혀 없을 때만.
    각 항목 {"label":"...", "brief": 회의 맥락에 맞춘 쉬운 설명 1~2문장(숫자 · 기준이 있으면 넣고, 불확실하면 '(확인 필요)'), "query": 웹에서 찾을 한국어 검색어(맥락 낱말 포함)}
 5) related: 대화에 직접 나오지 않았지만 지금 판단에 중요한 연관 정보 0~2개(관련 제도 · 규정, 경쟁사 · 대안, 시세 · 기준값, 놓치기 쉬운 위험). 억지로 채우지 않는다. 각 항목 모양은 labels와 같다.
-summary 안에 labels의 말이 나오면 그 자리를 [[말]]로 감싼다(라벨 글자 그대로).
-JSON만 답한다: {"summary":"...","importance":0,"topic":"...","labels":[{"label":"...","brief":"...","query":"..."}],"related":[{"label":"...","brief":"...","query":"..."}]}`;
+6) suspects: 받아쓰기가 잘못 들은 것으로 의심되는 말 0~4개. 특히 회사 · 기관 · 사람 · 제품 이름, 전문 용어, 앞뒤 맥락과 안 맞는 낱말(예: "이촌 농계법인"은 "이촌회계법인"일 가능성). heard는 위 받아쓰기에 있는 글자 그대로(띄어쓰기 포함, 2~15자), fix는 맥락상 바른 말 추정, level은 1(의심) 또는 2(거의 확실히 틀림). 이미 고친 말 · 이미 낸 것은 빼고, 확신이 없으면 내지 않는다.
+summary 안에 labels의 말이 나오면 그 자리를 [[말]]로 감싼다(라벨 글자 그대로). summary에는 suspects의 fix(바른 말)를 쓴다.
+JSON만 답한다: {"summary":"...","importance":0,"topic":"...","labels":[{"label":"...","brief":"...","query":"..."}],"related":[{"label":"...","brief":"...","query":"..."}],"suspects":[{"heard":"...","fix":"...","level":1}]}`;
   try{
     const r = await sample.json(prompt, {modelTier:"quick"});
     const sec=(performance.now()-t0)/1000; state.stats.lat.push(sec);
@@ -604,6 +605,7 @@ JSON만 답한다: {"summary":"...","importance":0,"topic":"...","labels":[{"lab
       const k=String(x.label||"").trim(); if(!k || state.asked.has(k)) continue; state.asked.add(k);
       addSug(k, seg, String(x.query||k), n++, String(x.brief||""), true);
     }
+    window.addSuspects?.(r?.suspects);
     log(`요약 ${sec.toFixed(1)}초 · 중요도 ${imp} · 요약 안 ${inl.size} · 옆 라벨 ${n}${topic?" · 주제 "+topic:""}`,"ok");
   }catch(e){ log(`요약 실패: ${e.code}`,"no"); if(e.code==="not_granted"||e.code==="sampling_disabled") sample=null; }
   finally{ state.busy=false; stats();
@@ -880,7 +882,7 @@ async function makeMinutes(){
   const spk=$("spk").checked;
   const said=state.lines.filter(l=>l.t<=state.t).map(l=>`[${fmt(l.t)}] ${l.s}`).join("\n");
   const raw = said.length<=40000 ? said : "";
-  const q=`대면 회의의 최종 회의록을 쓴다. 한국어, 개조식 짧은 문장, 받아쓰기에 없는 내용은 만들지 않는다. 먼저 이 회의의 메인 주제를 하나 정하고, 메인 주제와 관련된 논의만 flow · decisions · actions · open에 쓴다. 메인 주제와 관련 없는 사담 · 인사 · 시험 삼아 한 말은 other에 한 줄로만 묶는다. 업무 안건이 전혀 없으면 title을 "업무 안건 없음(사담)"으로 하고 flow는 비운다. 제안 · 의견은 결정으로 쓰지 않는다.
+  const q=`대면 회의의 최종 회의록을 쓴다. 한국어, 개조식 짧은 문장, 받아쓰기에 없는 내용은 만들지 않는다. ${window.susHint?.()||""}먼저 이 회의의 메인 주제를 하나 정하고, 메인 주제와 관련된 논의만 flow · decisions · actions · open에 쓴다. 메인 주제와 관련 없는 사담 · 인사 · 시험 삼아 한 말은 other에 한 줄로만 묶는다. 업무 안건이 전혀 없으면 title을 "업무 안건 없음(사담)"으로 하고 flow는 비운다. 제안 · 의견은 결정으로 쓰지 않는다.
 ${spk ? "화자 구분: 받아쓰기에는 화자 표시가 없다. 말투, 호칭, 역할, 앞뒤 맥락으로 화자를 화자 A, 화자 B…로 나누고 각 화자의 역할을 짐작해 적는다. 결정과 할 일에는 말한 화자를 붙인다. 짐작이므로 확신이 낮으면 (추정)을 붙인다." : "화자는 나누지 않는다."}
 JSON만 답한다:
 {"title":"회의 제목","main_topic":"메인 주제","summary":["세 줄 요약 1","2","3"],"other":"메인 주제와 관련 없는 이야기 한 줄(없으면 빈 값)",
@@ -1477,6 +1479,17 @@ window.openSheet=function(b, keyword, ctx, query, brief){
 </script>
 <style>
 #recs{min-height:32px}
+/* 11-02 마스터 녹음 피드백 1안: 받아쓰기 확인 칸(아래 라벨 칸 맨 위). 노랑 물결 = 의심, 빨강 = 거의 확실히 틀림 */
+#chk{display:flex;flex-wrap:wrap;gap:var(--lab-gap);flex-basis:100%;padding-bottom:6px;margin-bottom:2px;border-bottom:1px dashed var(--line)}
+#chk::before{content:"받아쓰기 확인 · 누르면 고침";flex-basis:100%;font-size:11px;color:var(--sub);font-weight:600}
+#chk .susc{display:inline-flex;align-items:center;gap:4px;min-height:var(--lab-h);padding:0 4px 0 var(--lab-px);border-radius:999px;font-size:var(--lab-fs);font-weight:600;border:1.5px solid #d9a400;background:rgba(217,164,0,.10);color:var(--ink)}
+#chk .susc.l2{border-color:#e5484d;background:rgba(229,72,77,.12)}
+#chk .susc s{opacity:.75}
+#chk .susc button{min-height:22px!important;height:22px;padding:0 6px!important;font-size:12px;border:0;background:transparent;color:var(--sub);border-radius:999px}
+#chk .susc .go{color:var(--ink);font-weight:700;padding:0 2px!important}
+#chk .susc input{width:7em;font:inherit;font-size:14px;padding:0 6px;height:22px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink)}
+.sus{text-decoration:underline wavy #d9a400;text-decoration-thickness:1.5px;text-underline-offset:3px;cursor:pointer}
+.sus.l2{text-decoration-color:#e5484d}
 /* 11-02 15:17 마스터 녹음 피드백: 모두 바꾸기 막대가 GIST 라벨 · 단추보다 크다 → 라벨 크기에 맞춤 */
 #fixbar{padding:4px 6px;gap:4px;border-radius:10px}
 #fixbar span{font-size:11px}
@@ -1556,6 +1569,48 @@ window.gistRec={recStart, recStop, allMeets, blobOf, delMeet};
 })();
 </script>
 <script>
+// ⑥ 11-02 마스터 녹음 피드백 1안: 1분 요약 때 AI가 받아쓰기 오류로 의심되는 말(suspects)을 함께 낸다.
+//    아래 라벨 칸 맨 위 '받아쓰기 확인' 줄에 '들은 말 → 바른 말' 칩으로 띄우고(노랑 = 의심, 빨강 = 거의 확실), 요약 카드 안 같은 말에는 물결 밑줄.
+//    칩이나 밑줄을 한 번 누르면 모두 바꾸기(회의록 · 받아쓰기 · 카드 전부), ✎로 바른 말을 직접 쓰고, ×로 그대로 둔다. 남은 의심은 최종 회의록에 '(확인 필요)'로
+(()=>{
+const susp=new Map(); // heard → {fix, level, done}
+const _ra=resetAll; resetAll=function(){ susp.clear(); return _ra.apply(this, arguments); };
+function chk(){ let c=$("chk"); if(!c){ c=document.createElement("div"); c.id="chk"; $("sug").prepend(c); } return c; }
+function unmark(h){ document.querySelectorAll("#feed .sus").forEach(s=>{ if(s.dataset.h===h) s.replaceWith(document.createTextNode(s.textContent)); }); }
+let marking=false;
+function markFeed(){
+  const open=[...susp].filter(([,v])=>!v.done); if(!open.length) return; marking=true;
+  try{
+    const w=document.createTreeWalker($("feed"), NodeFilter.SHOW_TEXT, {acceptNode:n=>n.parentElement?.closest(".sus,button,input,textarea,.t") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+    const nodes=[]; while(w.nextNode()) nodes.push(w.currentNode);
+    for(const t of nodes){ for(const [h,v] of open){ const i=t.nodeValue.indexOf(h); if(i<0) continue;
+      const tail=t.splitText(i); tail.nodeValue=tail.nodeValue.slice(h.length);
+      const s=document.createElement("span"); s.className="sus"+(v.level>1?" l2":""); s.dataset.h=h; s.textContent=h; s.title=`받아쓰기 확인: '${h}' → '${v.fix}'? 누르면 고침`;
+      s.onclick=e=>{ e.stopPropagation(); fix(h, v.fix); }; tail.before(s); break; } }
+  } finally { marking=false; }
+}
+new MutationObserver(()=>{ if(!marking) setTimeout(markFeed, 50); }).observe($("feed"), {childList:true, subtree:true});
+function done(h, how, to){ const v=susp.get(h); if(!v) return; v.done=how; unmark(h); v.el?.remove(); if(!chk().children.length) chk().remove(); pcLog({kind:"suspect", heard:h, fix:to??v.fix, level:v.level, done:how}); }
+function fix(h, to){ to=String(to||"").trim(); if(!to || to===h){ done(h,"그대로"); return; } unmark(h); const n=applyFix(h, to); done(h,"고침",to); toast(`'${h}' → '${to}' ${n}곳 바꿈`); }
+window.addSuspects=function(list){
+  for(const x of (Array.isArray(list)?list:[]).slice(0,4)){
+    const h=String(x?.heard||"").trim(), f=String(x?.fix||"").trim(), lv=+x?.level>1?2:1;
+    if(h.length<2 || h.length>20 || !f || f===h || susp.has(h) || state.fixes?.[h]) continue;
+    if(!state.lines.some(l=>String(l.s).includes(h)) && !$("feed").textContent.includes(h)) continue; // 실제로 받아쓴 글에 있는 말만
+    const v={fix:f, level:lv, done:""}; susp.set(h, v);
+    const c=document.createElement("span"); c.className="susc"+(lv>1?" l2":""); c.title=lv>1?"거의 확실히 잘못 받아씀":"잘못 받아쓴 것 같음";
+    const go=document.createElement("button"); go.type="button"; go.className="go"; go.innerHTML=`<s></s> → <b></b>`; go.querySelector("s").textContent=h; go.querySelector("b").textContent=f; go.onclick=()=>fix(h, v.fix);
+    const ed=document.createElement("button"); ed.type="button"; ed.textContent="✎"; ed.title="바른 말 직접 쓰기";
+    ed.onclick=()=>{ const i=document.createElement("input"); i.value=v.fix; i.setAttribute("aria-label",h+"의 바른 말"); ed.replaceWith(i); i.focus(); i.select(); i.onkeydown=e=>{ if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); fix(h, i.value); } }; };
+    const no=document.createElement("button"); no.type="button"; no.textContent="×"; no.title="그대로 두기"; no.onclick=()=>done(h,"그대로");
+    c.append(go, ed, no); v.el=c; chk().append(c);
+    pcLog({kind:"suspect", heard:h, fix:f, level:lv});
+  }
+  markFeed();
+};
+window.susHint=()=>{ const open=[...susp].filter(([,v])=>!v.done); return open.length ? `받아쓰기 확인이 끝나지 않은 말(들은 말 → 추정): ${open.map(([h,v])=>h+" → "+v.fix).join(", ")}. 이 말이 들어가는 자리에는 추정한 바른 말을 쓰고 뒤에 '(확인 필요)'를 붙인다. ` : ""; };
+window.gistSus={susp, markFeed};
+})();
 // ⑤ 11-02 마스터 답18 1안: '회의록'을 누르면 PC가 새 GIST 회의록 템플릿으로 만든 회의록을 띄운다.
 //    찾아본 자료 · 고치기는 위 단추로 옛 화면을 연다. PC 회의가 아니거나 만들지 못하면 옛 화면 그대로
 (()=>{
