@@ -1120,7 +1120,7 @@ function addHeard(t, at){
   state.live=[...(state.live||[]).slice(-1), L.s]; $("live").textContent=state.live.join("\n");
 }
 function beginRun(label){
-  resetAll(); state.lines=[]; state.liveMode=true; state.t0=Date.now(); state.lastInput=Date.now();
+  resetAll(); state.lines=[]; state.liveMode=true; state.pcMeet=false; state.t0=Date.now(); state.lastInput=Date.now();
   $("dict").hidden=true; $("live").textContent="듣고 있습니다…";
   state.running=true; $("rec").classList.add("on"); $("go").textContent="끝내기"; $("go").classList.add("end");
   keepAwake(); log(`실시간 시작(${label})`);
@@ -1242,7 +1242,8 @@ window.openSheet = function(b, keyword, ctx, query, brief){
     box.append(other, skip); st.textContent = cands.length ? "맞는 뜻이 없으면 '다른 뜻'을 눌러 알려 주세요" : "후보를 찾지 못했습니다. 뜻을 알려 주시면 그 뜻으로 찾습니다"; })();
 };
 const CUTSEC=25; // 요약 카드 주기(초): 25초 + 요약 호출 약 7초 → 첫 카드 약 32초
-function pcLog(rec){ if(state.liveMode) pcFetch("/log", JSON.stringify(rec)).catch(()=>{}); } // 화면 기록을 PC 회의 폴더에도 남긴다
+// 화면 기록을 PC 회의 폴더에도 남긴다. 끝내기는 liveMode를 먼저 끄고 회의록을 만들므로, 이 회의에서 PC로 보낸 적이 있으면(pcMeet) 회의록 줄도 보낸다(11-02 회의록 데이터 누락)
+function pcLog(rec){ if(state.liveMode) state.pcMeet=true; if(state.liveMode || (state.pcMeet && rec.kind==="minutes")) pcFetch("/log", JSON.stringify(rec)).catch(()=>{}); }
 const lvlH=[0,0,0,0,0,0,0];
 function lvlPush(v, reset){ if(reset){ lvlH.fill(0); } else { lvlH.push(Math.min(1, v*14)); lvlH.shift(); }
   const bars=document.querySelectorAll("#lvl i"); bars.forEach((b,i)=>b.style.transform=`scaleY(${Math.max(.12, lvlH[i])})`); }
