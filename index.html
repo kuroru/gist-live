@@ -1616,27 +1616,35 @@ window.gistSus={susp, markFeed};
 (()=>{
 const _oc=window.openCompiled;
 let newHtml=null;
-async function fetchNew(){
+async function fetchNew(base){
   for(let i=0;i<4;i++){ // 끝내기 직후면 회의록 데이터가 PC에 닿기 전일 수 있어 조금 기다렸다 다시 묻는다
-    try{ const j=await pcFetch("/minutes","{}"); if(j.ok) return j.html;
+    try{ const j=await pcFetch("/minutes"+(base?"?base="+encodeURIComponent(base):""),"{}"); if(j.ok) return j.html;
       if(!/회의록 데이터 없음/.test(j.error||"")){ log(`새 양식 회의록 못 만듦: ${String(j.error||"").slice(-120)}`,"wa"); return null; } }
     catch(e){ log(`새 양식 회의록 못 만듦: ${e.code||e}`,"wa"); return null; }
     await new Promise(r=>setTimeout(r,2500));
   }
   return null;
 }
-function oldView(given, label){ $("vhtml").hidden=false; $("vsave").hidden=false; return _oc(given, label); }
+// 11-02 마스터 답21 1안: 옛 양식 화면은 없앤다(PC 회의 폴더의 옛 파일은 기록으로 남김). PC가 알려 준 회의 이름(base)으로 새 양식을 받는다
+const _pf=pcFetch;
+pcFetch=window.pcFetch=async function(path, body, type){ const j=await _pf(path, body, type); if(path==="/new" && j?.base) state.pcBase=j.base; return j; };
+const _sh=saveHist;
+saveHist=function(){ _sh.apply(this, arguments); try{ const h=loadHist(); if(h[0] && state.pcBase && !h[0].base){ h[0].base=state.pcBase; localStorage.setItem("gist_hist", JSON.stringify(h)); } }catch(_){} };
+function note(msg, retry){ const body=$("vbody"); const p=document.createElement("p"); p.style.cssText="padding:24px 16px;font-size:15px;line-height:1.6"; p.textContent=msg; body.replaceChildren(p);
+  if(retry){ const b=document.createElement("button"); b.type="button"; b.textContent="다시 시도"; b.style.marginLeft="16px"; b.onclick=retry; body.append(b); } }
 window.openCompiled=async function(given, label){
-  if(given || !state.pcMeet || !state.minutes) return oldView(given, label);
-  const body=$("vbody"); $("vtitle").textContent="회의록 만드는 중…"; body.replaceChildren(); $("vedit").hidden=true; $("viewer").hidden=false;
-  newHtml = await fetchNew();
-  if(!newHtml){ toast("새 양식을 만들지 못해 기존 화면으로 엽니다"); return oldView(given, label); }
-  $("vtitle").textContent="GIST 회의록"; $("vhtml").hidden=true; $("vsave").hidden=true;
+  const base = given ? (loadHist().find(h=>h.label===label)?.base || "") : (state.pcBase || "");
+  $("vedit").hidden=true; $("vhtml").hidden=true; $("vsave").hidden=true; $("viewer").hidden=false;
+  $("vtitle").textContent = label ? `회의록 · ${label.split(" · ")[0]}` : "GIST 회의록";
+  if(!base && (given || !state.pcMeet)){ note("이 회의는 새 양식 회의록을 이 화면에서 열 수 없습니다(PC가 회의 이름을 알려 주기 전 기록). PC 회의 폴더에 새 양식 회의록이 있으니, 대화창에서 'GIST 회의록 보내 줘'라고 하시면 받으실 수 있습니다."); return; }
+  note("회의록 만드는 중…");
+  newHtml = await fetchNew(base);
+  if(!newHtml){ note("새 양식 회의록을 만들지 못했습니다. PC 연결을 확인한 뒤 다시 시도해 주세요.", ()=>openCompiled(given, label)); return; }
+  const body=$("vbody");
   const bar=document.createElement("nav"); bar.className="vgnb";
-  const old=document.createElement("button"); old.type="button"; old.textContent=`찾아본 자료 ${state.docs.length}건 · 고치기`; old.onclick=()=>oldView();
   const dl=document.createElement("button"); dl.type="button"; dl.textContent="회의록 받기";
   dl.onclick=()=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([newHtml],{type:"text/html"})); a.download=`GIST_회의록_${new Date().toISOString().slice(0,10)}.html`; document.body.append(a); a.click(); a.remove(); };
-  bar.append(old, dl);
+  bar.append(dl);
   // 회의록 쪽은 794px 고정이라, 860px 폭 창으로 그린 뒤 화면 폭에 맞게 통째로 줄인다(휴대폰에서 오른쪽이 잘리지 않게)
   const box=document.createElement("div"); box.style.cssText="position:relative;width:100%;height:calc(100vh - 110px);overflow:hidden";
   const f=document.createElement("iframe"); f.title="GIST 회의록"; f.srcdoc=newHtml; f.style.cssText="position:absolute;left:0;top:0;width:860px;border:0;background:#fff;transform-origin:0 0";
