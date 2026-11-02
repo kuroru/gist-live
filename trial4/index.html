@@ -913,7 +913,7 @@ ${raw ? "\n받아쓴 원문:\n"+raw : "\n(원문이 길어 1분 요약만 보냄
     if(state.docs.length) html+=sec("찾아본 자료", `<div class="body"><ul>${state.docs.map(x=>`<li>${e(x.keyword)} · ${e(x.title)}</li>`).join("")}</ul></div>`);
     if(spk && sp.length) html+=sec("화자(말 · 맥락으로 추정)", `<div class="body"><ul>${sp.map(x=>`<li><b>${e(x.id)}</b> · ${e(x.role)}</li>`).join("")}</ul><p style="font-size:13px;color:#4A4E46;margin-top:8px">목소리가 아니라 말과 맥락으로 나눈 결과입니다. 이름은 사람이 확인해 바꿉니다.</p></div>`);
     html+=`</div><div class="colophon">GIST가 1분 요약과 받아쓴 원문으로 쓴 회의록입니다. 받아쓰기 오류가 그대로 들어갈 수 있습니다.</div>`;
-    state.minutes=html; log(`회의록 ${((performance.now()-t0)/1000).toFixed(1)}초${spk?" · 화자 "+sp.length:""}`,"ok");
+    state.minutes=html; pcLog({kind:"minutes", r, dur:fmt(state.t), docs:state.docs.map(x=>({k:x.keyword, title:x.title}))}); log(`회의록 ${((performance.now()-t0)/1000).toFixed(1)}초${spk?" · 화자 "+sp.length:""}`,"ok");
   }catch(e){ log(`회의록 실패: ${e.code||e.message}`,"no"); state.minutes=null; }
   finally{ state.minutesBusy=false; packBtn(); }
 }
